@@ -1,5 +1,5 @@
 -- ==============================================================================
--- WANGCAOS PREMIUM CLIENT V7.8 - FULL FEATURES + COMPACT UI + AUTOSAVE + FLY
+-- WANGCAOS PREMIUM CLIENT V7.8 - DEFAULT GUI + CATEGORY GROUPS + AUTOSAVE
 -- ALL RIGHTS RESERVED BY WANG (2026)
 -- ==============================================================================
 
@@ -147,7 +147,6 @@ local function SaveConfigToFile()
         end
     end)
 end
-
 local CurrentSpinAngle = 0
 local IsMobile = (UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled)
 local LastFarmTime = 0
@@ -165,8 +164,9 @@ local SafeParent = GetSafeGui()
 if not SafeParent then return end
 
 for _, old in pairs(SafeParent:GetChildren()) do
-    if old.Name == "Wangcaos_Compact_Figma_UI" then old:Destroy() end
+    if old.Name == "Wangcaos_UI" or old.Name == "Wangcaos_Compact_Figma_UI" then old:Destroy() end
 end
+
 local FOV_Drawing = Drawing.new("Circle")
 FOV_Drawing.Color = Config.FovColor
 FOV_Drawing.Thickness = Config.FovThickness
@@ -231,33 +231,6 @@ local function IsTeammate(Player)
     if Player.TeamColor and LocalPlayer.TeamColor then
         if Player.TeamColor == LocalPlayer.TeamColor and Player.TeamColor.Name ~= "White" and Player.TeamColor.Name ~= "Medium stone grey" then return true end
     end
-    local teamKeywords = {"Team", "Faction", "Gang", "Role", "Group", "Side"}
-    for _, attr in pairs(teamKeywords) do
-        local myAttr = LocalPlayer:GetAttribute(attr)
-        local targetAttr = Player:GetAttribute(attr)
-        if myAttr and targetAttr and myAttr == targetAttr then return true end
-        if LocalPlayer.Character and Player.Character then
-            local myCharAttr = LocalPlayer.Character:GetAttribute(attr)
-            local targetCharAttr = Player.Character:GetAttribute(attr)
-            if myCharAttr and targetCharAttr and myCharAttr == targetCharAttr then return true end
-        end
-    end
-    local function CheckHiddenValues(parent1, parent2)
-        if not parent1 or not parent2 then return false end
-        for _, val in pairs(parent1:GetChildren()) do
-            if val:IsA("StringValue") or val:IsA("IntValue") or val:IsA("ObjectValue") then
-                for _, key in pairs(teamKeywords) do
-                    if string.find(string.lower(val.Name), string.lower(key)) then
-                        local targetVal = parent2:FindFirstChild(val.Name)
-                        if targetVal and val.Value == targetVal.Value and val.Value ~= "" and val.Value ~= 0 then return true end
-                    end
-                end
-            end
-        end
-        return false
-    end
-    if CheckHiddenValues(LocalPlayer, Player) then return true end
-    if CheckHiddenValues(LocalPlayer.Character, Player.Character) then return true end
     return false
 end
 
@@ -271,7 +244,6 @@ local function CheckWallOcclusion(TargetPart, Character)
     local Result = workspace:Raycast(Origin, Direction, Params)
     return Result == nil
 end
-
 local function CheckTriggerWall(Position)
     if not Config.TriggerWallCheck then return true end
     local Origin = Camera.CFrame.Position
@@ -293,6 +265,7 @@ local function GetDesiredHitbox(Character)
     end
     return Character:FindFirstChild("Head")
 end
+
 local function GetClosestPlayerToCrosshair()
     local Center = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
     local ClosestTarget = nil
@@ -340,29 +313,19 @@ local function GetAuraTarget()
     for _, Player in pairs(Players:GetPlayers()) do
         if Player ~= LocalPlayer and Player.Character and IsAlive(Player.Character) then
             if Config.TeamCheckAura and IsTeammate(Player) then continue end
-            
             local TargetPartInstance = GetDesiredHitbox(Player.Character)
             local EnemyRoot = Player.Character:FindFirstChild("HumanoidRootPart")
             local Hum = Player.Character:FindFirstChildOfClass("Humanoid")
-            
             if TargetPartInstance and EnemyRoot and Hum then
                 if Config.AuraWallCheck and not CheckWallOcclusion(TargetPartInstance, Player.Character) then continue end
-                
                 local MyPosFlat = Vector3.new(MyRoot.Position.X, 0, MyRoot.Position.Z)
                 local EnemyPosFlat = Vector3.new(EnemyRoot.Position.X, 0, EnemyRoot.Position.Z)
                 local DistFlat = (EnemyPosFlat - MyPosFlat).Magnitude
-                
                 if DistFlat <= Config.AuraRadius then
                     if Config.PriorityLowestHealth then
-                        if Hum.Health < LowestHealth then
-                            LowestHealth = Hum.Health
-                            BestTarget = TargetPartInstance
-                        end
+                        if Hum.Health < LowestHealth then LowestHealth = Hum.Health BestTarget = TargetPartInstance end
                     else
-                        if DistFlat < ClosestDist then
-                            ClosestDist = DistFlat
-                            BestTarget = TargetPartInstance
-                        end
+                        if DistFlat < ClosestDist then ClosestDist = DistFlat BestTarget = TargetPartInstance end
                     end
                 end
             end
@@ -379,7 +342,6 @@ local function GetEquippedTool(Character)
     local Tool = Character:FindFirstChildOfClass("Tool")
     return Tool and Tool.Name or "None"
 end
-
 local function PerformTriggerbotClick()
     local TargetInstance = Mouse.Target
     if TargetInstance and TargetInstance.Parent then
@@ -432,10 +394,7 @@ local function ProcessAutoFarmPlayer()
         MyRoot.CFrame = CFrame.new(BehindPosition, EnemyRoot.Position)
         Camera.CFrame = CFrame.new(Camera.CFrame.Position, EnemyHead.Position)
         
-        if not IsFiring then
-            IsFiring = true
-            pcall(function() mouse1press() end)
-        end
+        if not IsFiring then IsFiring = true pcall(function() mouse1press() end) end
         
         if tick() - LastFarmTime >= Config.AutoFarmDelay then
             LastFarmTime = tick()
@@ -443,8 +402,9 @@ local function ProcessAutoFarmPlayer()
         end
     end
 end
+
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "Wangcaos_Compact_Figma_UI"
+ScreenGui.Name = "Wangcaos_UI"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = SafeParent
@@ -455,11 +415,8 @@ local function MakeDraggable(UIElement, DragHandle, PosKey)
 
     DragHandle.InputBegan:Connect(function(input)
         if Config.LockMobileButtons and PosKey then return end 
-        
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            mousePos = input.Position
-            framePos = UIElement.Position
+            dragging = true mousePos = input.Position framePos = UIElement.Position
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then 
                     dragging = false 
@@ -494,7 +451,6 @@ local function RegisterTouchFriendlyClick(TextButton, Callback)
         end
     end)
 end
-
 -- ==============================================================================
 -- MOBILE BUTTONS (INDEPENDENT)
 -- ==============================================================================
@@ -505,10 +461,7 @@ local function CreateIndependentMobileButton(Name, TextOn, TextOff, Key, ShowKey
     local yo = Config["MobilePos_"..Key.."_YO"] or InitPos.Y.Offset
     
     if not Config["MobilePos_"..Key.."_XS"] then
-        Config["MobilePos_"..Key.."_XS"] = xs
-        Config["MobilePos_"..Key.."_XO"] = xo
-        Config["MobilePos_"..Key.."_YS"] = ys
-        Config["MobilePos_"..Key.."_YO"] = yo
+        Config["MobilePos_"..Key.."_XS"] = xs Config["MobilePos_"..Key.."_XO"] = xo Config["MobilePos_"..Key.."_YS"] = ys Config["MobilePos_"..Key.."_YO"] = yo
     end
 
     local ShortcutBtn = Instance.new("TextButton")
@@ -517,16 +470,14 @@ local function CreateIndependentMobileButton(Name, TextOn, TextOff, Key, ShowKey
     ShortcutBtn.BackgroundColor3 = DefaultColor
     ShortcutBtn.BackgroundTransparency = 0.2
     ShortcutBtn.Position = UDim2.new(xs, xo, ys, yo)
-    ShortcutBtn.Size = UDim2.new(0, 52, 0, 52)
+    ShortcutBtn.Size = UDim2.new(0, 50, 0, 50)
     ShortcutBtn.Font = Enum.Font.GothamBold
     ShortcutBtn.Text = TextOff
     ShortcutBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    ShortcutBtn.TextSize = 9
+    ShortcutBtn.TextSize = 10
     ShortcutBtn.Visible = (Config[ShowKey] and IsMobile)
     Instance.new("UICorner", ShortcutBtn).CornerRadius = UDim.new(1, 0)
-    local Stroke = Instance.new("UIStroke", ShortcutBtn)
-    Stroke.Color = Color3.fromRGB(255, 255, 255)
-    Stroke.Thickness = 1.5
+    local Stroke = Instance.new("UIStroke", ShortcutBtn) Stroke.Color = Color3.fromRGB(255, 255, 255) Stroke.Thickness = 1.5
     MakeDraggable(ShortcutBtn, ShortcutBtn, Key)
     GlobalMobileButtons[Key] = { Btn = ShortcutBtn, ShowKey = ShowKey, DefColor = DefaultColor, T_ON = TextOn, T_OFF = TextOff }
     
@@ -538,12 +489,12 @@ local function CreateIndependentMobileButton(Name, TextOn, TextOff, Key, ShowKey
 end
 
 CreateIndependentMobileButton("Aimbot", "AIM\nON", "AIM\nOFF", "Aimbot", "ShowMobileAim", Color3.fromRGB(255, 50, 50), UDim2.new(0.85, 0, 0.15, 0))
-CreateIndependentMobileButton("Triggerbot", "TRIG\nON", "TRIG\nOFF", "Triggerbot", "ShowMobileTrig", Color3.fromRGB(230, 125, 30), UDim2.new(0.85, 0, 0.26, 0))
-CreateIndependentMobileButton("Speed", "SPD\nON", "SPD\nOFF", "SpeedToggle", "ShowMobileSpeed", Color3.fromRGB(140, 30, 230), UDim2.new(0.85, 0, 0.37, 0))
-CreateIndependentMobileButton("AutoFarm", "FRM\nON", "FRM\nOFF", "AutoFarmPlayer", "ShowMobileFarm", Color3.fromRGB(45, 140, 75), UDim2.new(0.85, 0, 0.48, 0))
-CreateIndependentMobileButton("Aura", "AUR\nON", "AUR\nOFF", "Aura", "ShowMobileAura", Color3.fromRGB(0, 150, 255), UDim2.new(0.85, 0, 0.59, 0))
-CreateIndependentMobileButton("ThirdPerson", "3RD\nON", "3RD\nOFF", "ThirdPerson", "ShowMobileTP", Color3.fromRGB(150, 150, 150), UDim2.new(0.85, 0, 0.70, 0))
-CreateIndependentMobileButton("FlyToggle", "FLY\nON", "FLY\nOFF", "FlyToggle", "ShowMobileFly", Color3.fromRGB(200, 150, 50), UDim2.new(0.85, 0, 0.81, 0))
+CreateIndependentMobileButton("Triggerbot", "TRIG\nON", "TRIG\nOFF", "Triggerbot", "ShowMobileTrig", Color3.fromRGB(230, 125, 30), UDim2.new(0.85, 0, 0.25, 0))
+CreateIndependentMobileButton("Speed", "SPD\nON", "SPD\nOFF", "SpeedToggle", "ShowMobileSpeed", Color3.fromRGB(140, 30, 230), UDim2.new(0.85, 0, 0.35, 0))
+CreateIndependentMobileButton("AutoFarm", "FRM\nON", "FRM\nOFF", "AutoFarmPlayer", "ShowMobileFarm", Color3.fromRGB(45, 140, 75), UDim2.new(0.85, 0, 0.45, 0))
+CreateIndependentMobileButton("Aura", "AUR\nON", "AUR\nOFF", "Aura", "ShowMobileAura", Color3.fromRGB(0, 150, 255), UDim2.new(0.85, 0, 0.55, 0))
+CreateIndependentMobileButton("ThirdPerson", "3RD\nON", "3RD\nOFF", "ThirdPerson", "ShowMobileTP", Color3.fromRGB(150, 150, 150), UDim2.new(0.85, 0, 0.65, 0))
+CreateIndependentMobileButton("FlyToggle", "FLY\nON", "FLY\nOFF", "FlyToggle", "ShowMobileFly", Color3.fromRGB(200, 150, 50), UDim2.new(0.85, 0, 0.75, 0))
 
 local lxs = Config["MobilePos_MainLogo_XS"] or 0
 local lxo = Config["MobilePos_MainLogo_XO"] or 20
@@ -571,104 +522,106 @@ Instance.new("UIStroke", ToggleButton).Thickness = 1.5
 ToggleButton.Visible = IsMobile
 GlobalMobileButtons["MainLogo"] = { Btn = ToggleButton }
 MakeDraggable(ToggleButton, ToggleButton, "MainLogo")
-
 -- ==============================================================================
--- COMPACT MENU GUI CONSTRUCTION
+-- DEFAULT UI MENU (WITH CATEGORIES)
 -- ==============================================================================
 local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainCompactFrame"
-MainFrame.Size = UDim2.new(0, 320, 0, 400)
-MainFrame.Position = UDim2.new(0.5, -160, 0.5, -200)
-MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 17)
+MainFrame.Name = "MainBackgroundFrame"
+MainFrame.Size = UDim2.new(0, 420, 0, 300)
+MainFrame.Position = UDim2.new(0.5, -210, 0.5, -150)
+MainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 MainFrame.BorderSizePixel = 0
 MainFrame.Visible = Config.MenuVisible
 MainFrame.Parent = ScreenGui
 
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 6)
-Instance.new("UIStroke", MainFrame).Color = Color3.fromRGB(45, 47, 50)
-
 local TitleBar = Instance.new("Frame")
 TitleBar.Size = UDim2.new(1, 0, 0, 30)
-TitleBar.BackgroundColor3 = Color3.fromRGB(22, 22, 25)
+TitleBar.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 TitleBar.BorderSizePixel = 0
 TitleBar.Parent = MainFrame
-Instance.new("UICorner", TitleBar).CornerRadius = UDim.new(0, 6)
 
 local TitleText = Instance.new("TextLabel")
 TitleText.Size = UDim2.new(1, -10, 1, 0)
 TitleText.Position = UDim2.new(0, 10, 0, 0)
 TitleText.BackgroundTransparency = 1
-TitleText.Text = "WANGCAOS V7.8 | COMPACT"
-TitleText.TextColor3 = Color3.fromRGB(200, 200, 200)
+TitleText.Text = "WANGCAOS CLIENT V7.8"
+TitleText.TextColor3 = Color3.fromRGB(255, 255, 255)
 TitleText.TextXAlignment = Enum.TextXAlignment.Left
-TitleText.Font = Enum.Font.Code
-TitleText.TextSize = 13
+TitleText.Font = Enum.Font.GothamBold
+TitleText.TextSize = 14
 TitleText.Parent = TitleBar
 
 local CloseBtn = Instance.new("TextButton")
 CloseBtn.Size = UDim2.new(0, 30, 0, 30)
 CloseBtn.Position = UDim2.new(1, -30, 0, 0)
 CloseBtn.BackgroundTransparency = 1
-CloseBtn.Text = "×"
-CloseBtn.TextColor3 = Color3.fromRGB(150, 150, 150)
+CloseBtn.Text = "X"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 0, 0)
 CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.TextSize = 18
+CloseBtn.TextSize = 14
 CloseBtn.Parent = TitleBar
 RegisterTouchFriendlyClick(CloseBtn, function() Config.MenuVisible = false MainFrame.Visible = false end)
 RegisterTouchFriendlyClick(ToggleButton, function() Config.MenuVisible = not Config.MenuVisible MainFrame.Visible = Config.MenuVisible end)
 MakeDraggable(MainFrame, TitleBar, nil)
 
-local TabContainer = Instance.new("ScrollingFrame")
-TabContainer.Size = UDim2.new(1, -10, 1, -40)
-TabContainer.Position = UDim2.new(0, 5, 0, 35)
-TabContainer.BackgroundTransparency = 1
-TabContainer.ScrollBarThickness = 2
-TabContainer.CanvasSize = UDim2.new(0, 0, 0, 1200)
-TabContainer.Parent = MainFrame
+local ScrollingFrame = Instance.new("ScrollingFrame")
+ScrollingFrame.Size = UDim2.new(1, -20, 1, -40)
+ScrollingFrame.Position = UDim2.new(0, 10, 0, 35)
+ScrollingFrame.BackgroundTransparency = 1
+ScrollingFrame.ScrollBarThickness = 4
+ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 1400)
+ScrollingFrame.Parent = MainFrame
 
 local UIListLayout = Instance.new("UIListLayout")
 UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-UIListLayout.Padding = UDim.new(0, 4)
-UIListLayout.Parent = TabContainer
+UIListLayout.Padding = UDim.new(0, 5)
+UIListLayout.Parent = ScrollingFrame
 
-local function CreateSection(Name)
-    local SectionLabel = Instance.new("TextLabel")
-    SectionLabel.Size = UDim2.new(1, 0, 0, 20)
-    SectionLabel.BackgroundTransparency = 1
-    SectionLabel.Text = "  > " .. Name
-    SectionLabel.TextColor3 = Color3.fromRGB(0, 170, 255)
-    SectionLabel.TextXAlignment = Enum.TextXAlignment.Left
-    SectionLabel.Font = Enum.Font.Code
-    SectionLabel.TextSize = 12
-    SectionLabel.Parent = TabContainer
+local function CreateCategory(TitleName)
+    local CategoryFrame = Instance.new("Frame")
+    CategoryFrame.Size = UDim2.new(1, 0, 0, 30)
+    CategoryFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    CategoryFrame.BorderSizePixel = 0
+    CategoryFrame.Parent = ScrollingFrame
+    
+    local CategoryLabel = Instance.new("TextLabel")
+    CategoryLabel.Size = UDim2.new(1, 0, 1, 0)
+    CategoryLabel.BackgroundTransparency = 1
+    CategoryLabel.Text = TitleName
+    CategoryLabel.TextColor3 = Color3.fromRGB(0, 255, 150)
+    CategoryLabel.Font = Enum.Font.GothamBold
+    CategoryLabel.TextSize = 13
+    CategoryLabel.Parent = CategoryFrame
 end
 
 local function CreateToggle(Text, ConfigKey, Callback)
     local ToggleFrame = Instance.new("Frame")
-    ToggleFrame.Size = UDim2.new(1, 0, 0, 22)
-    ToggleFrame.BackgroundColor3 = Color3.fromRGB(22, 22, 25)
+    ToggleFrame.Size = UDim2.new(1, 0, 0, 30)
+    ToggleFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
     ToggleFrame.BorderSizePixel = 0
-    ToggleFrame.Parent = TabContainer
-    Instance.new("UICorner", ToggleFrame).CornerRadius = UDim.new(0, 4)
+    ToggleFrame.Parent = ScrollingFrame
     
     local Label = Instance.new("TextLabel")
-    Label.Size = UDim2.new(1, -30, 1, 0)
+    Label.Size = UDim2.new(1, -60, 1, 0)
     Label.Position = UDim2.new(0, 10, 0, 0)
     Label.BackgroundTransparency = 1
     Label.Text = Text
-    Label.TextColor3 = Color3.fromRGB(200, 200, 200)
+    Label.TextColor3 = Color3.fromRGB(255, 255, 255)
     Label.TextXAlignment = Enum.TextXAlignment.Left
-    Label.Font = Enum.Font.Code
-    Label.TextSize = 11
+    Label.Font = Enum.Font.Gotham
+    Label.TextSize = 14
     Label.Parent = ToggleFrame
     
     local Checkbox = Instance.new("TextButton")
-    Checkbox.Size = UDim2.new(0, 12, 0, 12)
-    Checkbox.Position = UDim2.new(1, -22, 0.5, -6)
-    Checkbox.BackgroundColor3 = Config[ConfigKey] and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(40, 40, 45)
-    Checkbox.Text = ""
+    Checkbox.Size = UDim2.new(0, 40, 0, 20)
+    Checkbox.Position = UDim2.new(1, -50, 0.5, -10)
+    Checkbox.BackgroundColor3 = Config[ConfigKey] and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(70, 70, 70)
+    Checkbox.Text = Config[ConfigKey] and "ON" or "OFF"
+    Checkbox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Checkbox.Font = Enum.Font.GothamBold
+    Checkbox.TextSize = 12
     Checkbox.Parent = ToggleFrame
-    Instance.new("UICorner", Checkbox).CornerRadius = UDim.new(0, 3)
+    Instance.new("UICorner", Checkbox).CornerRadius = UDim.new(0, 4)
     
     RegisterTouchFriendlyClick(Checkbox, function()
         if ConfigKey == "LockMobileButtons" and not IsMobile then return end
@@ -678,34 +631,32 @@ local function CreateToggle(Text, ConfigKey, Callback)
     end)
     GlobalSyncToggles[ConfigKey] = Checkbox
 end
-
 local function CreateSlider(Text, ConfigKey, Min, Max, Decimals)
     local SliderFrame = Instance.new("Frame")
-    SliderFrame.Size = UDim2.new(1, 0, 0, 32)
-    SliderFrame.BackgroundColor3 = Color3.fromRGB(22, 22, 25)
+    SliderFrame.Size = UDim2.new(1, 0, 0, 45)
+    SliderFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
     SliderFrame.BorderSizePixel = 0
-    SliderFrame.Parent = TabContainer
-    Instance.new("UICorner", SliderFrame).CornerRadius = UDim.new(0, 4)
+    SliderFrame.Parent = ScrollingFrame
     
     local Label = Instance.new("TextLabel")
-    Label.Size = UDim2.new(1, -10, 0, 16)
-    Label.Position = UDim2.new(0, 10, 0, 2)
+    Label.Size = UDim2.new(1, -10, 0, 20)
+    Label.Position = UDim2.new(0, 10, 0, 0)
     Label.BackgroundTransparency = 1
     Label.Text = Text .. ": " .. tostring(Config[ConfigKey])
-    Label.TextColor3 = Color3.fromRGB(200, 200, 200)
+    Label.TextColor3 = Color3.fromRGB(255, 255, 255)
     Label.TextXAlignment = Enum.TextXAlignment.Left
-    Label.Font = Enum.Font.Code
-    Label.TextSize = 11
+    Label.Font = Enum.Font.Gotham
+    Label.TextSize = 14
     Label.Parent = SliderFrame
     
     local SliderBG = Instance.new("TextButton")
-    SliderBG.Size = UDim2.new(1, -20, 0, 4)
-    SliderBG.Position = UDim2.new(0, 10, 0, 20)
-    SliderBG.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+    SliderBG.Size = UDim2.new(1, -20, 0, 6)
+    SliderBG.Position = UDim2.new(0, 10, 0, 28)
+    SliderBG.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
     SliderBG.Text = ""
     SliderBG.AutoButtonColor = false
     SliderBG.Parent = SliderFrame
-    Instance.new("UICorner", SliderBG).CornerRadius = UDim.new(0, 2)
+    Instance.new("UICorner", SliderBG).CornerRadius = UDim.new(1, 0)
     
     local Fill = Instance.new("Frame")
     local fillWidth = (Config[ConfigKey] - Min) / (Max - Min)
@@ -713,7 +664,7 @@ local function CreateSlider(Text, ConfigKey, Min, Max, Decimals)
     Fill.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
     Fill.BorderSizePixel = 0
     Fill.Parent = SliderBG
-    Instance.new("UICorner", Fill).CornerRadius = UDim.new(0, 2)
+    Instance.new("UICorner", Fill).CornerRadius = UDim.new(1, 0)
     
     local Dragging = false
     local function Update(inputPos)
@@ -734,12 +685,16 @@ local function CreateSlider(Text, ConfigKey, Min, Max, Decimals)
     end)
 end
 
-table.insert(UI_Refresh_Functions, function()
-    for key, checkbox in pairs(GlobalSyncToggles) do
-        if checkbox and Config[key] ~= nil then
-            checkbox.BackgroundColor3 = Config[key] and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(40, 40, 45)
-        end
+local function UpdateToggleVisual(key)
+    local checkbox = GlobalSyncToggles[key]
+    if checkbox and Config[key] ~= nil then
+        checkbox.BackgroundColor3 = Config[key] and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(70, 70, 70)
+        checkbox.Text = Config[key] and "ON" or "OFF"
     end
+end
+
+table.insert(UI_Refresh_Functions, function()
+    for key, _ in pairs(GlobalSyncToggles) do UpdateToggleVisual(key) end
     for key, mData in pairs(GlobalMobileButtons) do
         if mData.Btn and Config[key] ~= nil then
             mData.Btn.BackgroundColor3 = Config[key] and Color3.fromRGB(45, 120, 75) or mData.DefColor
@@ -750,30 +705,26 @@ table.insert(UI_Refresh_Functions, function()
 end)
 
 -- ==============================================================================
--- POPULATING THE COMPACT MENU
+-- POPULATING THE DEFAULT MENU (GROUPED)
 -- ==============================================================================
-CreateSection("COMBAT & AIM")
+CreateCategory("--- 🎯 AIMBOT SETTINGS ---")
 CreateToggle("Enable Aimbot", "Aimbot")
 CreateToggle("Aimbot Team Check", "TeamCheck")
 CreateToggle("Aimbot Wall Check", "WallCheck")
 CreateSlider("Aimbot Smoothness", "Smoothness", 0, 10, false)
 
-CreateSection("AURA SYSTEM")
+CreateCategory("--- ⚔️ KILLAURA & COMBAT ---")
 CreateToggle("Enable Kill Aura", "Aura")
 CreateToggle("Aura Team Check", "TeamCheckAura")
 CreateToggle("Aura Wall Check", "AuraWallCheck")
 CreateToggle("Priority Lowest Health", "PriorityLowestHealth")
 CreateSlider("Aura Radius", "AuraRadius", 5, 150, false)
 CreateSlider("Aura Smoothness", "AuraSmoothness", 0, 10, false)
-CreateSlider("Aura Transparency", "AuraTransparency", 0, 100, false)
-
-CreateSection("TRIGGER & SPIN")
 CreateToggle("Enable Triggerbot", "Triggerbot")
-CreateToggle("Triggerbot Wall Check", "TriggerWallCheck")
+CreateToggle("Trigger Wall Check", "TriggerWallCheck")
 CreateToggle("Enable Spinbot", "Spinbot")
 CreateSlider("Spinbot Speed", "SpinSpeed", 5, 100, false)
-
-CreateSection("PLAYER & MOVEMENT")
+CreateCategory("--- 🏃 MOVEMENT & PLAYER ---")
 CreateToggle("Enable Speed Hack", "SpeedToggle")
 CreateSlider("Walk Speed Value", "WalkSpeed", 16, 200, false)
 CreateToggle("Enable Jump Boost", "JumpToggle")
@@ -784,7 +735,8 @@ CreateToggle("Auto Farm (Behind)", "AutoFarmPlayer")
 CreateSlider("Farm Delay", "AutoFarmDelay", 0.01, 5, true)
 CreateToggle("Bow Down", "BowDown")
 CreateSlider("Bow Angle", "BowAngle", 0, 90, false)
-CreateSection("VISUALS & ESP")
+
+CreateCategory("--- 👁️ VISUALS & ESP ---")
 CreateToggle("Master ESP Toggle", "EspMaster")
 CreateToggle("Show ESP Box", "EspBox")
 CreateToggle("Show ESP Tracer", "EspTracer")
@@ -796,22 +748,22 @@ CreateToggle("FullBright", "FullBright", function(state)
     if state then Lighting.Ambient = Color3.fromRGB(255, 255, 255) Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
     else Lighting.Ambient = Config.StoredAmbient Lighting.OutdoorAmbient = Config.StoredOutdoorAmbient end
 end)
-
-CreateSection("MISC & MOBILE")
-CreateToggle("Force Third Person", "ThirdPerson")
-CreateSlider("Third Person Dist", "ThirdPersonDist", 5, 100, false)
 CreateToggle("Show FOV Circle", "FovCircle")
 CreateSlider("FOV Radius", "FovRadius", 30, 500, false)
 CreateToggle("Show Crosshair Dot", "CrosshairDot")
-CreateToggle("Anti-AFK", "AntiAFK")
+
+CreateCategory("--- 📱 MOBILE & MISC ---")
 CreateToggle("Lock Mobile Buttons", "LockMobileButtons")
 CreateToggle("Show Mobile Aimbot", "ShowMobileAim")
 CreateToggle("Show Mobile Trigger", "ShowMobileTrig")
 CreateToggle("Show Mobile Speed", "ShowMobileSpeed")
 CreateToggle("Show Mobile Farm", "ShowMobileFarm")
 CreateToggle("Show Mobile Aura", "ShowMobileAura")
-CreateToggle("Show Mobile 3rd P", "ShowMobileTP")
 CreateToggle("Show Mobile Fly", "ShowMobileFly")
+CreateToggle("Show Mobile 3rd P", "ShowMobileTP")
+CreateToggle("Force Third Person", "ThirdPerson")
+CreateSlider("Third Person Dist", "ThirdPersonDist", 5, 100, false)
+CreateToggle("Anti-AFK", "AntiAFK")
 
 UserInputService.InputBegan:Connect(function(input, processed)
     if processed then return end
@@ -836,7 +788,6 @@ pcall(function()
         end
     end)
 end)
-
 local function RenderVisuals(Player, Character)
     if not Character or not Character.Parent then return end
     local Root = Character:WaitForChild("HumanoidRootPart", 5)
@@ -851,7 +802,7 @@ local function RenderVisuals(Player, Character)
     Gui.Name = "WangInfoTag" Gui.Adornee = Head Gui.Size = UDim2.new(0, 200, 0, 100) Gui.StudsOffset = Vector3.new(0, 4, 0) Gui.AlwaysOnTop = true
 
     local Label = Instance.new("TextLabel", Gui)
-    Label.Size = UDim2.new(1, 0, 0, 40) Label.BackgroundTransparency = 1 Label.Font = Enum.Font.Code Label.TextSize = 13 Label.TextColor3 = Config.EspColor
+    Label.Size = UDim2.new(1, 0, 0, 40) Label.BackgroundTransparency = 1 Label.Font = Enum.Font.GothamBold Label.TextSize = 13 Label.TextColor3 = Config.EspColor
     
     local HealthBG = Instance.new("Frame", Gui)
     HealthBG.Name = "HealthBG" HealthBG.BackgroundColor3 = Color3.fromRGB(40, 0, 0) HealthBG.BorderSizePixel = 1 HealthBG.Position = UDim2.new(0.25, 0, 0, 45) HealthBG.Size = UDim2.new(0.5, 0, 0, 5) HealthBG.Visible = false
@@ -868,6 +819,7 @@ local function MonitorPlayer(Player)
     Player.CharacterAdded:Connect(function(Char) task.spawn(RenderVisuals, Player, Char) end)
     if Player.Character then task.spawn(RenderVisuals, Player, Player.Character) end
 end
+
 MasterLoop = RunService.RenderStepped:Connect(function()
     local ScreenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
     local ScreenBottom = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
@@ -888,19 +840,15 @@ MasterLoop = RunService.RenderStepped:Connect(function()
             if Config.JumpToggle then MyHum.UseJumpPower = true MyHum.JumpPower = Config.JumpPower end
             
             if Config.FlyToggle then
-                local bg = MyRoot:FindFirstChild("WangFlyBG") or Instance.new("BodyGyro")
-                bg.Name = "WangFlyBG" bg.P = 9e4 bg.maxTorque = Vector3.new(9e9, 9e9, 9e9) bg.Parent = MyRoot
-                local bv = MyRoot:FindFirstChild("WangFlyBV") or Instance.new("BodyVelocity")
-                bv.Name = "WangFlyBV" bv.maxForce = Vector3.new(9e9, 9e9, 9e9) bv.Parent = MyRoot
+                local bg = MyRoot:FindFirstChild("WangFlyBG") or Instance.new("BodyGyro") bg.Name = "WangFlyBG" bg.P = 9e4 bg.maxTorque = Vector3.new(9e9, 9e9, 9e9) bg.Parent = MyRoot
+                local bv = MyRoot:FindFirstChild("WangFlyBV") or Instance.new("BodyVelocity") bv.Name = "WangFlyBV" bv.maxForce = Vector3.new(9e9, 9e9, 9e9) bv.Parent = MyRoot
                 
                 local moveDir = MyHum.MoveDirection
                 local flyVel = moveDir * Config.FlySpeed
                 if UserInputService:IsKeyDown(Enum.KeyCode.Space) then flyVel = flyVel + Vector3.new(0, Config.FlySpeed, 0) end
                 if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then flyVel = flyVel - Vector3.new(0, Config.FlySpeed, 0) end
                 bv.velocity = flyVel
-                
-                if moveDir.Magnitude > 0 then bg.cframe = CFrame.new(MyRoot.Position, MyRoot.Position + moveDir)
-                else bg.cframe = Camera.CFrame end
+                if moveDir.Magnitude > 0 then bg.cframe = CFrame.new(MyRoot.Position, MyRoot.Position + moveDir) else bg.cframe = Camera.CFrame end
             else
                 if MyRoot:FindFirstChild("WangFlyBG") then MyRoot.WangFlyBG:Destroy() end
                 if MyRoot:FindFirstChild("WangFlyBV") then MyRoot.WangFlyBV:Destroy() end
@@ -916,8 +864,7 @@ MasterLoop = RunService.RenderStepped:Connect(function()
         local neckJoint = (headInstance and headInstance:FindFirstChild("Neck")) or (torsoInstance and torsoInstance:FindFirstChild("Neck"))
         if neckJoint and neckJoint:IsA("Motor6D") then
             if not NeckCache[neckJoint] then NeckCache[neckJoint] = neckJoint.C0 end
-            if Config.BowDown then neckJoint.C0 = NeckCache[neckJoint] * CFrame.Angles(math.rad(-Config.BowAngle), 0, 0)
-            else neckJoint.C0 = NeckCache[neckJoint] end
+            if Config.BowDown then neckJoint.C0 = NeckCache[neckJoint] * CFrame.Angles(math.rad(-Config.BowAngle), 0, 0) else neckJoint.C0 = NeckCache[neckJoint] end
         end
         
         if Config.Aura then
@@ -998,10 +945,10 @@ end)
 pcall(function()
     StarterGui:SetCore("SendNotification", {
         Title = "WANGCAOS CLIENT V7.8",
-        Text = "Auto-Save System & COMPACT GUI V7.8 loaded successfully!",
+        Text = "Default UI + Categories loaded successfully!",
         Duration = 7
     })
 end)
 -- ==============================================================================
--- END OF SCRIPT - POWERED FOR WANG (2026)
+-- END OF SCRIPT - DESIGNED FOR WANG (2026)
 -- ==============================================================================
