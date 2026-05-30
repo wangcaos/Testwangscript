@@ -1,5 +1,5 @@
 -- ==============================================================================
--- WANGCAOS PREMIUM CLIENT V7.8 - COMPACT ELEMENTS & ORIGINAL GUI + AUTOSAVE
+-- WANGCAOS PREMIUM CLIENT V7.8 - COMPACT STANDARD GUI + AUTOSAVE
 -- ALL RIGHTS RESERVED BY WANG (2026)
 -- ==============================================================================
 
@@ -37,7 +37,7 @@ local Config = {
     AuraWallCheck = true,
     AuraSmoothness = 5,
     AuraRadius = 30,
-    AuraColor = Color3.fromRGB(120, 80, 255),
+    AuraColor = Color3.fromRGB(0, 170, 255),
     AuraTransparency = 50,
     PriorityLowestHealth = false,
     
@@ -100,8 +100,6 @@ local Config = {
     ShowMobileFly = false,
     LockMobileButtons = false,
     
-    CustomBackground = true,
-    BackgroundAssetId = "rbxassetid://118670919014080",
     StoredAmbient = Lighting.Ambient,
     StoredOutdoorAmbient = Lighting.OutdoorAmbient
 }
@@ -166,61 +164,7 @@ local SafeParent = GetSafeGui()
 if not SafeParent then return end
 
 for _, old in pairs(SafeParent:GetChildren()) do
-    if old.Name == "Wangcaos_Premium_Figma_UI" then old:Destroy() end
-end
-
-local function ExportSettings()
-    local exportTable = {}
-    for k, v in pairs(Config) do
-        if type(v) == "boolean" or type(v) == "number" or type(v) == "string" then
-            exportTable[k] = v
-        elseif typeof(v) == "EnumItem" then
-            exportTable[k] = {__type = "EnumItem", EnumType = tostring(v.EnumType), Name = v.Name}
-        elseif typeof(v) == "Color3" then
-            exportTable[k] = {__type = "Color3", R = v.R, G = v.G, B = v.B}
-        end
-    end
-    local success, json = pcall(function() return HttpService:JSONEncode(exportTable) end)
-    if not success then return "" end
-    local hex = ""
-    for i = 1, #json do hex = hex .. string.format("%02X", string.byte(json, i)) end
-    return hex
-end
-
-local function ImportSettings(hexStr)
-    local success, err = pcall(function()
-        local json = ""
-        for i = 1, #hexStr, 2 do
-            local hexByte = string.sub(hexStr, i, i+1)
-            if not hexByte or #hexByte < 2 then break end
-            json = json .. string.char(tonumber(hexByte, 16))
-        end
-        local importTable = HttpService:JSONDecode(json)
-        for k, v in pairs(importTable) do
-            if type(v) == "table" and v.__type then
-                if v.__type == "EnumItem" then
-                    local enumType = string.split(v.EnumType, ".")[3] or v.EnumType
-                    pcall(function() Config[k] = Enum[enumType][v.Name] end)
-                elseif v.__type == "Color3" then
-                    Config[k] = Color3.new(v.R, v.G, v.B)
-                end
-            else
-                Config[k] = v
-            end
-        end
-        for _, refresh in pairs(UI_Refresh_Functions) do pcall(refresh) end
-        
-        for key, mData in pairs(GlobalMobileButtons) do
-            local xs = Config["MobilePos_"..key.."_XS"]
-            local xo = Config["MobilePos_"..key.."_XO"]
-            local ys = Config["MobilePos_"..key.."_YS"]
-            local yo = Config["MobilePos_"..key.."_YO"]
-            if xs and xo and ys and yo and mData.Btn then
-                pcall(function() mData.Btn.Position = UDim2.new(xs, xo, ys, yo) end)
-            end
-        end
-    end)
-    return success
+    if old.Name == "Wangcaos_UI" or old.Name == "Wangcaos_Premium_Figma_UI" then old:Destroy() end
 end
 
 local FOV_Drawing = Drawing.new("Circle")
@@ -265,6 +209,7 @@ local function ClearTracerObject(Player)
         Tracer_Cache[Player] = nil
     end
 end
+
 local function CleanCharacterVisuals(Character)
     if not Character then return end
     local OldBox = Character:FindFirstChild("WangBoxFill", true)
@@ -315,7 +260,6 @@ local function IsTeammate(Player)
     if CheckHiddenValues(LocalPlayer.Character, Player.Character) then return true end
     return false
 end
-
 local function CheckWallOcclusion(TargetPart, Character)
     if not Config.WallCheck and not Config.AuraWallCheck then return true end
     local Origin = Camera.CFrame.Position
@@ -383,6 +327,7 @@ local function GetClosestPlayerToCrosshair()
     end
     return ClosestTarget
 end
+
 local function GetAuraTarget()
     local MyChar = LocalPlayer.Character
     local MyRoot = MyChar and MyChar:FindFirstChild("HumanoidRootPart")
@@ -395,29 +340,19 @@ local function GetAuraTarget()
     for _, Player in pairs(Players:GetPlayers()) do
         if Player ~= LocalPlayer and Player.Character and IsAlive(Player.Character) then
             if Config.TeamCheckAura and IsTeammate(Player) then continue end
-            
             local TargetPartInstance = GetDesiredHitbox(Player.Character)
             local EnemyRoot = Player.Character:FindFirstChild("HumanoidRootPart")
             local Hum = Player.Character:FindFirstChildOfClass("Humanoid")
-            
             if TargetPartInstance and EnemyRoot and Hum then
                 if Config.AuraWallCheck and not CheckWallOcclusion(TargetPartInstance, Player.Character) then continue end
-                
                 local MyPosFlat = Vector3.new(MyRoot.Position.X, 0, MyRoot.Position.Z)
                 local EnemyPosFlat = Vector3.new(EnemyRoot.Position.X, 0, EnemyRoot.Position.Z)
                 local DistFlat = (EnemyPosFlat - MyPosFlat).Magnitude
-                
                 if DistFlat <= Config.AuraRadius then
                     if Config.PriorityLowestHealth then
-                        if Hum.Health < LowestHealth then
-                            LowestHealth = Hum.Health
-                            BestTarget = TargetPartInstance
-                        end
+                        if Hum.Health < LowestHealth then LowestHealth = Hum.Health BestTarget = TargetPartInstance end
                     else
-                        if DistFlat < ClosestDist then
-                            ClosestDist = DistFlat
-                            BestTarget = TargetPartInstance
-                        end
+                        if DistFlat < ClosestDist then ClosestDist = DistFlat BestTarget = TargetPartInstance end
                     end
                 end
             end
@@ -434,7 +369,6 @@ local function GetEquippedTool(Character)
     local Tool = Character:FindFirstChildOfClass("Tool")
     return Tool and Tool.Name or "None"
 end
-
 local function PerformTriggerbotClick()
     local TargetInstance = Mouse.Target
     if TargetInstance and TargetInstance.Parent then
@@ -487,10 +421,7 @@ local function ProcessAutoFarmPlayer()
         MyRoot.CFrame = CFrame.new(BehindPosition, EnemyRoot.Position)
         Camera.CFrame = CFrame.new(Camera.CFrame.Position, EnemyHead.Position)
         
-        if not IsFiring then
-            IsFiring = true
-            pcall(function() mouse1press() end)
-        end
+        if not IsFiring then IsFiring = true pcall(function() mouse1press() end) end
         
         if tick() - LastFarmTime >= Config.AutoFarmDelay then
             LastFarmTime = tick()
@@ -498,8 +429,9 @@ local function ProcessAutoFarmPlayer()
         end
     end
 end
+
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "Wangcaos_Premium_Figma_UI"
+ScreenGui.Name = "Wangcaos_UI"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = SafeParent
@@ -510,11 +442,8 @@ local function MakeDraggable(UIElement, DragHandle, PosKey)
 
     DragHandle.InputBegan:Connect(function(input)
         if Config.LockMobileButtons and PosKey then return end 
-        
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            mousePos = input.Position
-            framePos = UIElement.Position
+            dragging = true mousePos = input.Position framePos = UIElement.Position
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then 
                     dragging = false 
@@ -549,7 +478,9 @@ local function RegisterTouchFriendlyClick(TextButton, Callback)
         end
     end)
 end
-
+-- ==============================================================================
+-- MOBILE BUTTONS (INDEPENDENT)
+-- ==============================================================================
 local function CreateIndependentMobileButton(Name, TextOn, TextOff, Key, ShowKey, DefaultColor, InitPos)
     local xs = Config["MobilePos_"..Key.."_XS"] or InitPos.X.Scale
     local xo = Config["MobilePos_"..Key.."_XO"] or InitPos.X.Offset
@@ -557,10 +488,7 @@ local function CreateIndependentMobileButton(Name, TextOn, TextOff, Key, ShowKey
     local yo = Config["MobilePos_"..Key.."_YO"] or InitPos.Y.Offset
     
     if not Config["MobilePos_"..Key.."_XS"] then
-        Config["MobilePos_"..Key.."_XS"] = xs
-        Config["MobilePos_"..Key.."_XO"] = xo
-        Config["MobilePos_"..Key.."_YS"] = ys
-        Config["MobilePos_"..Key.."_YO"] = yo
+        Config["MobilePos_"..Key.."_XS"] = xs Config["MobilePos_"..Key.."_XO"] = xo Config["MobilePos_"..Key.."_YS"] = ys Config["MobilePos_"..Key.."_YO"] = yo
     end
 
     local ShortcutBtn = Instance.new("TextButton")
@@ -569,28 +497,32 @@ local function CreateIndependentMobileButton(Name, TextOn, TextOff, Key, ShowKey
     ShortcutBtn.BackgroundColor3 = DefaultColor
     ShortcutBtn.BackgroundTransparency = 0.2
     ShortcutBtn.Position = UDim2.new(xs, xo, ys, yo)
-    ShortcutBtn.Size = UDim2.new(0, 52, 0, 52)
+    ShortcutBtn.Size = UDim2.new(0, 50, 0, 50)
     ShortcutBtn.Font = Enum.Font.GothamBold
     ShortcutBtn.Text = TextOff
     ShortcutBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    ShortcutBtn.TextSize = 9
+    ShortcutBtn.TextSize = 10
     ShortcutBtn.Visible = (Config[ShowKey] and IsMobile)
     Instance.new("UICorner", ShortcutBtn).CornerRadius = UDim.new(1, 0)
-    local Stroke = Instance.new("UIStroke", ShortcutBtn)
-    Stroke.Color = Color3.fromRGB(255, 255, 255)
-    Stroke.Thickness = 1.5
+    local Stroke = Instance.new("UIStroke", ShortcutBtn) Stroke.Color = Color3.fromRGB(255, 255, 255) Stroke.Thickness = 1.5
     MakeDraggable(ShortcutBtn, ShortcutBtn, Key)
-    GlobalMobileButtons[Key] = { Btn = ShortcutBtn, ShowKey = ShowKey }
+    GlobalMobileButtons[Key] = { Btn = ShortcutBtn, ShowKey = ShowKey, DefColor = DefaultColor, T_ON = TextOn, T_OFF = TextOff }
+    
+    RegisterTouchFriendlyClick(ShortcutBtn, function()
+        Config[Key] = not Config[Key]
+        for _, refresh in pairs(UI_Refresh_Functions) do pcall(refresh) end
+    end)
     return ShortcutBtn
 end
 
-local MobAim = CreateIndependentMobileButton("Aimbot", "AIM\nON", "AIM\nOFF", "Aimbot", "ShowMobileAim", Color3.fromRGB(255, 50, 50), UDim2.new(0.85, 0, 0.15, 0))
-local MobTrig = CreateIndependentMobileButton("Triggerbot", "TRIG\nON", "TRIG\nOFF", "Triggerbot", "ShowMobileTrig", Color3.fromRGB(230, 125, 30), UDim2.new(0.85, 0, 0.26, 0))
-local MobSpeed = CreateIndependentMobileButton("Speed", "SPD\nON", "SPD\nOFF", "SpeedToggle", "ShowMobileSpeed", Color3.fromRGB(140, 30, 230), UDim2.new(0.85, 0, 0.37, 0))
-local MobFarm = CreateIndependentMobileButton("AutoFarm", "FRM\nON", "FRM\nOFF", "AutoFarmPlayer", "ShowMobileFarm", Color3.fromRGB(45, 140, 75), UDim2.new(0.85, 0, 0.48, 0))
-local MobAura = CreateIndependentMobileButton("Aura", "AUR\nON", "AUR\nOFF", "Aura", "ShowMobileAura", Color3.fromRGB(0, 150, 255), UDim2.new(0.85, 0, 0.59, 0))
-local MobTP = CreateIndependentMobileButton("ThirdPerson", "3RD\nON", "3RD\nOFF", "ThirdPerson", "ShowMobileTP", Color3.fromRGB(150, 150, 150), UDim2.new(0.85, 0, 0.70, 0))
-local MobFly = CreateIndependentMobileButton("FlyToggle", "FLY\nON", "FLY\nOFF", "FlyToggle", "ShowMobileFly", Color3.fromRGB(200, 150, 50), UDim2.new(0.85, 0, 0.81, 0))
+CreateIndependentMobileButton("Aimbot", "AIM\nON", "AIM\nOFF", "Aimbot", "ShowMobileAim", Color3.fromRGB(255, 50, 50), UDim2.new(0.85, 0, 0.15, 0))
+CreateIndependentMobileButton("Triggerbot", "TRIG\nON", "TRIG\nOFF", "Triggerbot", "ShowMobileTrig", Color3.fromRGB(230, 125, 30), UDim2.new(0.85, 0, 0.25, 0))
+CreateIndependentMobileButton("Speed", "SPD\nON", "SPD\nOFF", "SpeedToggle", "ShowMobileSpeed", Color3.fromRGB(140, 30, 230), UDim2.new(0.85, 0, 0.35, 0))
+CreateIndependentMobileButton("AutoFarm", "FRM\nON", "FRM\nOFF", "AutoFarmPlayer", "ShowMobileFarm", Color3.fromRGB(45, 140, 75), UDim2.new(0.85, 0, 0.45, 0))
+CreateIndependentMobileButton("Aura", "AUR\nON", "AUR\nOFF", "Aura", "ShowMobileAura", Color3.fromRGB(0, 150, 255), UDim2.new(0.85, 0, 0.55, 0))
+CreateIndependentMobileButton("ThirdPerson", "3RD\nON", "3RD\nOFF", "ThirdPerson", "ShowMobileTP", Color3.fromRGB(150, 150, 150), UDim2.new(0.85, 0, 0.65, 0))
+CreateIndependentMobileButton("FlyToggle", "FLY\nON", "FLY\nOFF", "FlyToggle", "ShowMobileFly", Color3.fromRGB(200, 150, 50), UDim2.new(0.85, 0, 0.75, 0))
+
 local lxs = Config["MobilePos_MainLogo_XS"] or 0
 local lxo = Config["MobilePos_MainLogo_XO"] or 20
 local lys = Config["MobilePos_MainLogo_YS"] or 0
@@ -617,165 +549,71 @@ Instance.new("UIStroke", ToggleButton).Thickness = 1.5
 ToggleButton.Visible = IsMobile
 GlobalMobileButtons["MainLogo"] = { Btn = ToggleButton }
 MakeDraggable(ToggleButton, ToggleButton, "MainLogo")
-
+-- ==============================================================================
+-- COMPACT MENU GUI (STANDARD STYLE, NO CUSTOM SWITCHES)
+-- ==============================================================================
 local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainFrame"
-MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(15, 16, 17)
-MainFrame.BackgroundTransparency = 0.15
+MainFrame.Name = "MainBackgroundFrame"
+MainFrame.Size = UDim2.new(0, 380, 0, 420)
+MainFrame.Position = UDim2.new(0.5, -190, 0.5, -210)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 MainFrame.BorderSizePixel = 0
-MainFrame.Position = UDim2.new(0.5, -300, 0.5, -200)
-MainFrame.Size = UDim2.new(0, 600, 0, 400)
 MainFrame.Visible = Config.MenuVisible
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
-Instance.new("UIStroke", MainFrame).Color = Color3.fromRGB(45, 47, 50)
-MainFrame.UIStroke.Thickness = 1.5
+MainFrame.Parent = ScreenGui
 
-local CustomBackgroundImage = Instance.new("ImageLabel")
-CustomBackgroundImage.Name = "MenuCustomWallpaper"
-CustomBackgroundImage.Parent = MainFrame
-CustomBackgroundImage.BackgroundTransparency = 1
-CustomBackgroundImage.Size = UDim2.new(1, 0, 1, 0)
-CustomBackgroundImage.Image = Config.BackgroundAssetId
-CustomBackgroundImage.ImageTransparency = 0.75
-CustomBackgroundImage.ScaleType = Enum.ScaleType.Crop
-CustomBackgroundImage.ZIndex = 0
-CustomBackgroundImage.Visible = Config.CustomBackground
-Instance.new("UICorner", CustomBackgroundImage).CornerRadius = UDim.new(0, 10)
+local TitleBar = Instance.new("Frame")
+TitleBar.Size = UDim2.new(1, 0, 0, 30)
+TitleBar.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+TitleBar.BorderSizePixel = 0
+TitleBar.Parent = MainFrame
 
-local TopNavBar = Instance.new("Frame")
-TopNavBar.Parent = MainFrame
-TopNavBar.BackgroundColor3 = Color3.fromRGB(23, 24, 26)
-TopNavBar.BackgroundTransparency = 0.3
-TopNavBar.Position = UDim2.new(0, 10, 0, 10)
-TopNavBar.Size = UDim2.new(1, -20, 0, 42)
-TopNavBar.ZIndex = 2
-Instance.new("UICorner", TopNavBar).CornerRadius = UDim.new(0, 8)
-
-local TabMenuContainer = Instance.new("Frame")
-TabMenuContainer.Parent = TopNavBar
-TabMenuContainer.BackgroundTransparency = 1
-TabMenuContainer.Size = UDim2.new(1, -45, 1, 0)
-local TabLayout = Instance.new("UIListLayout", TabMenuContainer)
-TabLayout.FillDirection = Enum.FillDirection.Horizontal
-TabLayout.Padding = UDim.new(0, 4)
-local TabPad = Instance.new("UIPadding", TabMenuContainer)
-TabPad.PaddingLeft = UDim.new(0, 6)
-TabPad.PaddingTop = UDim.new(0, 6)
+local TitleText = Instance.new("TextLabel")
+TitleText.Size = UDim2.new(1, -10, 1, 0)
+TitleText.Position = UDim2.new(0, 10, 0, 0)
+TitleText.BackgroundTransparency = 1
+TitleText.Text = "WANGCAOS CLIENT V7.8"
+TitleText.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleText.TextXAlignment = Enum.TextXAlignment.Left
+TitleText.Font = Enum.Font.GothamBold
+TitleText.TextSize = 14
+TitleText.Parent = TitleBar
 
 local CloseBtn = Instance.new("TextButton")
-CloseBtn.Parent = TopNavBar
+CloseBtn.Size = UDim2.new(0, 30, 0, 30)
+CloseBtn.Position = UDim2.new(1, -30, 0, 0)
 CloseBtn.BackgroundTransparency = 1
-CloseBtn.Position = UDim2.new(1, -34, 0.5, -13)
-CloseBtn.Size = UDim2.new(0, 26, 0, 26)
+CloseBtn.Text = "X"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 50, 50)
 CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.Text = "×"
-CloseBtn.TextColor3 = Color3.fromRGB(150, 153, 158)
-CloseBtn.TextSize = 22
-
-MakeDraggable(MainFrame, TopNavBar, nil)
+CloseBtn.TextSize = 14
+CloseBtn.Parent = TitleBar
 RegisterTouchFriendlyClick(CloseBtn, function() Config.MenuVisible = false MainFrame.Visible = false end)
 RegisterTouchFriendlyClick(ToggleButton, function() Config.MenuVisible = not Config.MenuVisible MainFrame.Visible = Config.MenuVisible end)
+MakeDraggable(MainFrame, TitleBar, nil)
 
-local ContentContainer = Instance.new("Frame")
-ContentContainer.Parent = MainFrame
-ContentContainer.BackgroundTransparency = 1
-ContentContainer.Position = UDim2.new(0, 15, 0, 65)
-ContentContainer.Size = UDim2.new(1, -30, 1, -80)
-ContentContainer.ZIndex = 2
+local TabContainer = Instance.new("ScrollingFrame")
+TabContainer.Size = UDim2.new(1, -16, 1, -40)
+TabContainer.Position = UDim2.new(0, 8, 0, 35)
+TabContainer.BackgroundTransparency = 1
+TabContainer.ScrollBarThickness = 3
+TabContainer.CanvasSize = UDim2.new(0, 0, 0, 1200)
+TabContainer.Parent = MainFrame
 
-local CombatPage = Instance.new("ScrollingFrame", ContentContainer)
-local PlayerPage = Instance.new("ScrollingFrame", ContentContainer)
-local MovementPage = Instance.new("ScrollingFrame", ContentContainer)
-local VisualPage = Instance.new("ScrollingFrame", ContentContainer)
-local MiscPage = Instance.new("ScrollingFrame", ContentContainer)
-local CreditsPage = Instance.new("ScrollingFrame", ContentContainer)
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Padding = UDim.new(0, 4) -- Cực gọn
+UIListLayout.Parent = TabContainer
 
-for _, page in pairs({CombatPage, PlayerPage, MovementPage, VisualPage, MiscPage, CreditsPage}) do
-    page.Size = UDim2.new(1, 0, 1, 0)
-    page.BackgroundTransparency = 1
-    page.BorderSizePixel = 0
-    page.CanvasSize = UDim2.new(0, 0, 0, 900)
-    page.ScrollBarThickness = 2
-    page.ScrollBarImageColor3 = Color3.fromRGB(60, 62, 65)
-    page.Visible = false
-    -- Đổi thành UIListLayout để sắp xếp dọc giống y hệt ảnh cậu yêu cầu
-    local layout = Instance.new("UIListLayout", page)
-    layout.SortOrder = Enum.SortOrder.LayoutOrder
-    layout.Padding = UDim.new(0, 8)
-    local pad = Instance.new("UIPadding", page)
-    pad.PaddingLeft = UDim.new(0, 10)
-    pad.PaddingRight = UDim.new(0, 10)
-    pad.PaddingTop = UDim.new(0, 10)
-end
-CombatPage.Visible = true
-local function CreatePremiumTab(Name, IconText, Order, TargetPage)
-    local TabBtn = Instance.new("TextButton", TabMenuContainer)
-    TabBtn.BackgroundColor3 = Order == 1 and Color3.fromRGB(32, 34, 37) or Color3.fromRGB(0, 0, 0)
-    TabBtn.BackgroundTransparency = Order == 1 and 0 or 1
-    TabBtn.Size = UDim2.new(0, 88, 0, 30)
-    TabBtn.Font = Enum.Font.GothamBold
-    TabBtn.LayoutOrder = Order
-    TabBtn.Text = IconText .. " " .. Name
-    TabBtn.TextColor3 = Order == 1 and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(140, 143, 148)
-    TabBtn.TextSize = 11
-    Instance.new("UICorner", TabBtn).CornerRadius = UDim.new(0, 6)
-    local TStroke = Instance.new("UIStroke", TabBtn)
-    TStroke.Color = Color3.fromRGB(55, 57, 61)
-    TStroke.Enabled = Order == 1
-    RegisterTouchFriendlyClick(TabBtn, function()
-        for _, p in pairs({CombatPage, PlayerPage, MovementPage, VisualPage, MiscPage, CreditsPage}) do p.Visible = false end
-        for _, btn in pairs(TabMenuContainer:GetChildren()) do
-            if btn:IsA("TextButton") then
-                btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-                btn.BackgroundTransparency = 1
-                btn.TextColor3 = Color3.fromRGB(140, 143, 148)
-                btn.UIStroke.Enabled = false
-            end
-        end
-        TabBtn.BackgroundColor3 = Color3.fromRGB(32, 34, 37)
-        TabBtn.BackgroundTransparency = 0
-        TabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        TStroke.Enabled = true
-        TargetPage.Visible = true
-    end)
-end
-
-local function UpdateToggleVisual(Key)
-    local TargetData = GlobalSyncToggles[Key]
-    if not TargetData then return end
-    local state = Config[Key]
-    local Ball = TargetData.Ball
-    local SwitchBg = TargetData.SwitchBg
-    TweenService:Create(Ball, TweenInfo.new(0.1, Enum.EasingStyle.Quad), {Position = state and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)}):Play()
-    TweenService:Create(SwitchBg, TweenInfo.new(0.1, Enum.EasingStyle.Quad), {BackgroundColor3 = state and Color3.fromRGB(120, 80, 255) or Color3.fromRGB(45, 45, 50)}):Play()
-    if GlobalMobileButtons[Key] then
-        local MData = GlobalMobileButtons[Key]
-        MData.Btn.BackgroundColor3 = state and Color3.fromRGB(45, 120, 75) or TargetData.DefMobColor
-        if Key == "Aimbot" then MData.Btn.Text = state and "AIM\nON" or "AIM\nOFF"
-        elseif Key == "Triggerbot" then MData.Btn.Text = state and "TRIG\nON" or "TRIG\nOFF"
-        elseif Key == "SpeedToggle" then MData.Btn.Text = state and "SPD\nON" or "SPD\nOFF"
-        elseif Key == "AutoFarmPlayer" then MData.Btn.Text = state and "FRM\nON" or "FRM\nOFF"
-        elseif Key == "Aura" then MData.Btn.Text = state and "AUR\nON" or "AUR\nOFF"
-        elseif Key == "ThirdPerson" then MData.Btn.Text = state and "3RD\nON" or "3RD\nOFF"
-        elseif Key == "FlyToggle" then MData.Btn.Text = state and "FLY\nON" or "FLY\nOFF"
-        end
-    end
-end
-
--- ==============================================================================
--- DESIGN UPDATE: CATEGORY, COMPACT TOGGLE AND SLIDER EXACTLY LIKE IMAGE
--- ==============================================================================
-
-local function AddCategory(Page, Text)
-    local Lbl = Instance.new("TextLabel", Page)
-    Lbl.BackgroundTransparency = 1
-    Lbl.Size = UDim2.new(1, -10, 0, 20)
-    Lbl.Font = Enum.Font.GothamBold
-    Lbl.Text = Text:upper()
-    Lbl.TextColor3 = Color3.fromRGB(130, 130, 150)
-    Lbl.TextSize = 11
-    Lbl.TextXAlignment = Enum.TextXAlignment.Left
+local function CreateCategory(TitleName)
+    local CategoryLabel = Instance.new("TextLabel")
+    CategoryLabel.Size = UDim2.new(1, 0, 0, 24)
+    CategoryLabel.BackgroundTransparency = 1
+    CategoryLabel.Text = TitleName:upper()
+    CategoryLabel.TextColor3 = Color3.fromRGB(0, 170, 255)
+    CategoryLabel.Font = Enum.Font.GothamBold
+    CategoryLabel.TextSize = 12
+    CategoryLabel.TextXAlignment = Enum.TextXAlignment.Left
+    CategoryLabel.Parent = TabContainer
 end
 
 local RestrictedKeys = {
@@ -783,302 +621,203 @@ local RestrictedKeys = {
     ShowMobileTrig = true, ShowMobileSpeed = true, ShowMobileFarm = true, ShowMobileFly = true
 }
 
-local function AddPremiumToggle(Page, LabelText, Key, Callback, DefMobColor, BindKey)
-    local TFrame = Instance.new("Frame", Page)
-    TFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-    TFrame.BackgroundTransparency = 0.4
-    TFrame.Size = UDim2.new(1, -10, 0, 40)
-    Instance.new("UICorner", TFrame).CornerRadius = UDim.new(0, 6)
+local function CreateToggle(Text, ConfigKey, Callback)
+    local ToggleFrame = Instance.new("Frame")
+    ToggleFrame.Size = UDim2.new(1, 0, 0, 26) -- Kích thước thu gọn
+    ToggleFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    ToggleFrame.BorderSizePixel = 0
+    ToggleFrame.Parent = TabContainer
+    Instance.new("UICorner", ToggleFrame).CornerRadius = UDim.new(0, 4)
     
-    local Lbl = Instance.new("TextLabel", TFrame)
-    Lbl.BackgroundTransparency = 1
-    Lbl.Position = UDim2.new(0, 15, 0, 0)
-    Lbl.Size = UDim2.new(0.7, 0, 1, 0)
-    Lbl.Font = Enum.Font.Gotham
-    Lbl.Text = LabelText
-    Lbl.TextColor3 = Color3.fromRGB(220, 220, 225)
-    Lbl.TextSize = 13
-    Lbl.TextXAlignment = Enum.TextXAlignment.Left
-
-    local SwitchBg = Instance.new("Frame", TFrame)
-    SwitchBg.BackgroundColor3 = Config[Key] and Color3.fromRGB(120, 80, 255) or Color3.fromRGB(45, 45, 50)
-    SwitchBg.Position = UDim2.new(1, -55, 0.5, -10)
-    SwitchBg.Size = UDim2.new(0, 40, 0, 20)
-    Instance.new("UICorner", SwitchBg).CornerRadius = UDim.new(1, 0)
-
-    local Ball = Instance.new("Frame", SwitchBg)
-    Ball.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    Ball.Position = Config[Key] and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
-    Ball.Size = UDim2.new(0, 16, 0, 16)
-    Instance.new("UICorner", Ball).CornerRadius = UDim.new(1, 0)
-
-    local Btn = Instance.new("TextButton", TFrame)
-    Btn.BackgroundTransparency = 1
-    Btn.Size = UDim2.new(1, 0, 1, 0)
-    Btn.Text = ""
-
-    GlobalSyncToggles[Key] = {Ball = Ball, SwitchBg = SwitchBg, DefMobColor = DefMobColor or Color3.fromRGB(40, 42, 45)}
-    RegisterTouchFriendlyClick(Btn, function() 
-        if RestrictedKeys[Key] and not IsMobile then
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(1, -60, 1, 0)
+    Label.Position = UDim2.new(0, 8, 0, 0)
+    Label.BackgroundTransparency = 1
+    Label.Text = Text
+    Label.TextColor3 = Color3.fromRGB(220, 220, 225)
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Font = Enum.Font.Gotham
+    Label.TextSize = 12
+    Label.Parent = ToggleFrame
+    
+    local Checkbox = Instance.new("TextButton")
+    Checkbox.Size = UDim2.new(0, 40, 0, 18)
+    Checkbox.Position = UDim2.new(1, -48, 0.5, -9)
+    Checkbox.BackgroundColor3 = Config[ConfigKey] and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(60, 60, 65)
+    Checkbox.Text = Config[ConfigKey] and "ON" or "OFF"
+    Checkbox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Checkbox.Font = Enum.Font.GothamBold
+    Checkbox.TextSize = 10
+    Checkbox.Parent = ToggleFrame
+    Instance.new("UICorner", Checkbox).CornerRadius = UDim.new(0, 4)
+    
+    RegisterTouchFriendlyClick(Checkbox, function()
+        if RestrictedKeys[ConfigKey] and not IsMobile then
             pcall(function() StarterGui:SetCore("SendNotification", {Title = "WANGCAOS", Text = "Button enable only for PE!", Duration = 3}) end)
             return
         end
-        Config[Key] = not Config[Key] 
-        UpdateToggleVisual(Key) 
-        if Callback then Callback(Config[Key]) end 
+        Config[ConfigKey] = not Config[ConfigKey]
+        for _, refresh in pairs(UI_Refresh_Functions) do pcall(refresh) end
+        if Callback then Callback(Config[ConfigKey]) end
     end)
-    table.insert(UI_Refresh_Functions, function() UpdateToggleVisual(Key) end)
+    GlobalSyncToggles[ConfigKey] = { Btn = Checkbox }
 end
-local function AddPremiumSlider(Page, LabelText, Min, Max, Key, Callback)
-    local SFrame = Instance.new("Frame", Page)
-    SFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-    SFrame.BackgroundTransparency = 0.4
-    SFrame.Size = UDim2.new(1, -10, 0, 55)
-    Instance.new("UICorner", SFrame).CornerRadius = UDim.new(0, 6)
+local function CreateSlider(Text, ConfigKey, Min, Max, Decimals)
+    local SliderFrame = Instance.new("Frame")
+    SliderFrame.Size = UDim2.new(1, 0, 0, 36) -- Kích thước slider thu gọn
+    SliderFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    SliderFrame.BorderSizePixel = 0
+    SliderFrame.Parent = TabContainer
+    Instance.new("UICorner", SliderFrame).CornerRadius = UDim.new(0, 4)
+    
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(0.6, 0, 0, 16)
+    Label.Position = UDim2.new(0, 8, 0, 2)
+    Label.BackgroundTransparency = 1
+    Label.Text = Text
+    Label.TextColor3 = Color3.fromRGB(220, 220, 225)
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Font = Enum.Font.Gotham
+    Label.TextSize = 12
+    Label.Parent = SliderFrame
 
-    local Lbl = Instance.new("TextLabel", SFrame)
-    Lbl.BackgroundTransparency = 1
-    Lbl.Position = UDim2.new(0, 15, 0, 5)
-    Lbl.Size = UDim2.new(0.5, 0, 0, 20)
-    Lbl.Font = Enum.Font.Gotham
-    Lbl.Text = LabelText
-    Lbl.TextColor3 = Color3.fromRGB(220, 220, 225)
-    Lbl.TextSize = 13
-    Lbl.TextXAlignment = Enum.TextXAlignment.Left
-
-    local ValTxt = Instance.new("TextLabel", SFrame)
+    local ValTxt = Instance.new("TextLabel", SliderFrame)
+    ValTxt.Size = UDim2.new(0.4, -8, 0, 16)
+    ValTxt.Position = UDim2.new(0.6, 0, 0, 2)
     ValTxt.BackgroundTransparency = 1
-    ValTxt.Position = UDim2.new(1, -65, 0, 5)
-    ValTxt.Size = UDim2.new(0, 50, 0, 20)
-    ValTxt.Font = Enum.Font.GothamBold
-    ValTxt.Text = tostring(Config[Key])
-    ValTxt.TextColor3 = Color3.fromRGB(120, 80, 255)
-    ValTxt.TextSize = 13
+    ValTxt.Text = tostring(Config[ConfigKey])
+    ValTxt.TextColor3 = Color3.fromRGB(0, 170, 255)
     ValTxt.TextXAlignment = Enum.TextXAlignment.Right
-
-    local Bar = Instance.new("Frame", SFrame)
-    Bar.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-    Bar.Position = UDim2.new(0, 15, 0, 35)
-    Bar.Size = UDim2.new(1, -30, 0, 4)
-    Instance.new("UICorner", Bar).CornerRadius = UDim.new(1, 0)
-
-    local Fill = Instance.new("Frame", Bar)
-    Fill.BackgroundColor3 = Color3.fromRGB(120, 80, 255)
-    Fill.Size = UDim2.new((Config[Key] - Min) / (Max - Min), 0, 1, 0)
+    ValTxt.Font = Enum.Font.GothamBold
+    ValTxt.TextSize = 11
+    
+    local SliderBG = Instance.new("TextButton")
+    SliderBG.Size = UDim2.new(1, -16, 0, 6)
+    SliderBG.Position = UDim2.new(0, 8, 0, 22)
+    SliderBG.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
+    SliderBG.Text = ""
+    SliderBG.AutoButtonColor = false
+    SliderBG.Parent = SliderFrame
+    Instance.new("UICorner", SliderBG).CornerRadius = UDim.new(1, 0)
+    
+    local Fill = Instance.new("Frame")
+    local fillWidth = (Config[ConfigKey] - Min) / (Max - Min)
+    Fill.Size = UDim2.new(math.clamp(fillWidth, 0, 1), 0, 1, 0)
+    Fill.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+    Fill.BorderSizePixel = 0
+    Fill.Parent = SliderBG
     Instance.new("UICorner", Fill).CornerRadius = UDim.new(1, 0)
-
-    local SliderBall = Instance.new("Frame", Fill)
-    SliderBall.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    SliderBall.Position = UDim2.new(1, -6, 0.5, -6)
-    SliderBall.Size = UDim2.new(0, 12, 0, 12)
-    Instance.new("UICorner", SliderBall).CornerRadius = UDim.new(1, 0)
-
-    local Btn = Instance.new("TextButton", Bar)
-    Btn.BackgroundTransparency = 1
-    Btn.Position = UDim2.new(0, 0, 0, -10)
-    Btn.Size = UDim2.new(1, 0, 1, 20)
-    Btn.Text = ""
-
+    
     local Dragging = false
     local function Update(inputPos)
         local mouseX = (inputPos and inputPos.X) or Mouse.X
-        local ratio = math.clamp((mouseX - Bar.AbsolutePosition.X) / Bar.AbsoluteSize.X, 0, 1)
+        local ratio = math.clamp((mouseX - SliderBG.AbsolutePosition.X) / SliderBG.AbsoluteSize.X, 0, 1)
         local val = Min + (Max - Min) * ratio
-        if Max - Min > 10 then val = math.floor(val) else val = math.floor(val * 10) / 10 end
-        Fill.Size = UDim2.new(ratio, 0, 1, 0)
-        ValTxt.Text = tostring(val)
-        Config[Key] = val
-        if Callback then Callback(val) end
+        if not Decimals then val = math.floor(val) else val = math.floor(val * 100) / 100 end
+        Config[ConfigKey] = val
+        for _, refresh in pairs(UI_Refresh_Functions) do pcall(refresh) end
     end
-    Btn.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then Dragging = true Update(input.Position) end end)
+    SliderBG.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then Dragging = true Update(input.Position) end end)
     UserInputService.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then Dragging = false end end)
     UserInputService.InputChanged:Connect(function(input) if Dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then Update(input.Position) end end)
     
     table.insert(UI_Refresh_Functions, function()
-        ValTxt.Text = tostring(Config[Key])
-        Fill.Size = UDim2.new((Config[Key] - Min) / (Max - Min), 0, 1, 0)
+        ValTxt.Text = tostring(Config[ConfigKey])
+        Fill.Size = UDim2.new((Config[ConfigKey] - Min) / (Max - Min), 0, 1, 0)
     end)
 end
 
-local function AddPremiumButton(Page, LabelText, ButtonText, Callback)
-    local BFrame = Instance.new("Frame", Page)
-    BFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-    BFrame.BackgroundTransparency = 0.4
-    BFrame.Size = UDim2.new(1, -10, 0, 40)
-    Instance.new("UICorner", BFrame).CornerRadius = UDim.new(0, 6)
-    
-    local Lbl = Instance.new("TextLabel", BFrame)
-    Lbl.BackgroundTransparency = 1
-    Lbl.Position = UDim2.new(0, 15, 0, 0)
-    Lbl.Size = UDim2.new(0.5, 0, 1, 0)
-    Lbl.Font = Enum.Font.Gotham
-    Lbl.Text = LabelText
-    Lbl.TextColor3 = Color3.fromRGB(220, 220, 225)
-    Lbl.TextSize = 13
-    Lbl.TextXAlignment = Enum.TextXAlignment.Left
-
-    local ActionBtn = Instance.new("TextButton", BFrame)
-    ActionBtn.BackgroundColor3 = Color3.fromRGB(120, 80, 255)
-    ActionBtn.Position = UDim2.new(1, -115, 0.5, -12)
-    ActionBtn.Size = UDim2.new(0, 100, 0, 24)
-    ActionBtn.Font = Enum.Font.GothamBold
-    ActionBtn.Text = ButtonText
-    ActionBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    ActionBtn.TextSize = 11
-    Instance.new("UICorner", ActionBtn).CornerRadius = UDim.new(0, 4)
-    RegisterTouchFriendlyClick(ActionBtn, Callback)
+local function UpdateToggleVisual(key)
+    local TargetData = GlobalSyncToggles[key]
+    if TargetData and TargetData.Btn and Config[key] ~= nil then
+        TargetData.Btn.BackgroundColor3 = Config[key] and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(60, 60, 65)
+        TargetData.Btn.Text = Config[key] and "ON" or "OFF"
+    end
 end
 
-local function AddExportBox(Page)
-    -- Tớ lược bớt Export/Import vào nút cho lẹ vì nó dài, cậu cần thì dùng script gốc
-end
-local function AddImportBox(Page) end
+table.insert(UI_Refresh_Functions, function()
+    for key, _ in pairs(GlobalSyncToggles) do UpdateToggleVisual(key) end
+    for key, mData in pairs(GlobalMobileButtons) do
+        if mData.Btn and Config[key] ~= nil then
+            mData.Btn.BackgroundColor3 = Config[key] and Color3.fromRGB(45, 120, 75) or mData.DefColor
+            mData.Btn.Text = Config[key] and mData.T_ON or mData.T_OFF
+            mData.Btn.Visible = (Config[mData.ShowKey] and IsMobile)
+        end
+    end
+end)
 
-local function AddPremiumCreditBox(Page, Title, Description)
-    local CFrame = Instance.new("Frame", Page)
-    CFrame.BackgroundColor3 = Color3.fromRGB(25, 27, 30)
-    CFrame.BackgroundTransparency = 0.3
-    CFrame.Size = UDim2.new(1, -10, 0, 45)
-    Instance.new("UICorner", CFrame).CornerRadius = UDim.new(0, 6)
+-- ==============================================================================
+-- POPULATING THE DEFAULT MENU (GROUPED)
+-- ==============================================================================
+CreateCategory("--- Aimbot Settings ---")
+CreateToggle("Enable Aimbot", "Aimbot")
+CreateToggle("Aimbot Team Check", "TeamCheck")
+CreateToggle("Aimbot Wall Check", "WallCheck")
+CreateSlider("Aimbot Smoothness", "Smoothness", 0, 10, false)
 
-    local TitleLbl = Instance.new("TextLabel", CFrame)
-    TitleLbl.BackgroundTransparency = 1
-    TitleLbl.Position = UDim2.new(0, 15, 0, 5)
-    TitleLbl.Size = UDim2.new(1, -30, 0, 16)
-    TitleLbl.Font = Enum.Font.GothamBold
-    TitleLbl.Text = Title
-    TitleLbl.TextColor3 = Color3.fromRGB(255, 255, 255)
-    TitleLbl.TextSize = 12
-    TitleLbl.TextXAlignment = Enum.TextXAlignment.Left
+CreateCategory("--- Kill Aura & Combat ---")
+CreateToggle("Enable Kill Aura", "Aura")
+CreateToggle("Aura Team Check", "TeamCheckAura")
+CreateToggle("Aura Wall Check", "AuraWallCheck")
+CreateToggle("Priority Lowest Health", "PriorityLowestHealth")
+CreateSlider("Aura Radius", "AuraRadius", 5, 150, false)
+CreateSlider("Aura Smoothness", "AuraSmoothness", 0, 10, false)
+CreateToggle("Enable Triggerbot", "Triggerbot")
+CreateToggle("Trigger Wall Check", "TriggerWallCheck")
+CreateToggle("Enable Spinbot", "Spinbot")
+CreateSlider("Spinbot Speed", "SpinSpeed", 5, 100, false)
+CreateCategory("--- Movement & Player ---")
+CreateToggle("Enable Speed Hack", "SpeedToggle")
+CreateSlider("Walk Speed Value", "WalkSpeed", 16, 200, false)
+CreateToggle("Enable Jump Boost", "JumpToggle")
+CreateSlider("Jump Power", "JumpPower", 50, 350, false)
+CreateToggle("Enable Flight Mode", "FlyToggle")
+CreateSlider("Flight Speed", "FlySpeed", 10, 300, false)
+CreateToggle("Auto Farm (Behind)", "AutoFarmPlayer")
+CreateSlider("Farm Delay", "AutoFarmDelay", 0.01, 5, true)
+CreateToggle("Bow Down", "BowDown")
+CreateSlider("Bow Angle", "BowAngle", 0, 90, false)
 
-    local DescLbl = Instance.new("TextLabel", CFrame)
-    DescLbl.BackgroundTransparency = 1
-    DescLbl.Position = UDim2.new(0, 15, 0, 20)
-    DescLbl.Size = UDim2.new(1, -30, 0, 16)
-    DescLbl.Font = Enum.Font.Gotham
-    DescLbl.Text = Description
-    DescLbl.TextColor3 = Color3.fromRGB(170, 175, 180)
-    DescLbl.TextSize = 11
-    DescLbl.TextXAlignment = Enum.TextXAlignment.Left
-end
-AddCategory(CombatPage, "Aimbot Settings")
-AddPremiumToggle(CombatPage, "Aimbot (Toggle On/Off)", "Aimbot", nil, Color3.fromRGB(255, 50, 50), "AimbotKeybind")
-AddPremiumToggle(CombatPage, "Team Check", "TeamCheck")
-AddPremiumToggle(CombatPage, "Wall Check", "WallCheck")
-AddPremiumSlider(CombatPage, "Smoothness Value", 0, 10, "Smoothness")
-AddPremiumToggle(CombatPage, "Triggerbot", "Triggerbot", nil, Color3.fromRGB(230, 125, 30), "TriggerbotKeybind")
-AddPremiumToggle(CombatPage, "Trigger Wall Check", "TriggerWallCheck")
-
-AddCategory(CombatPage, "Kill Aura Settings")
-AddPremiumToggle(CombatPage, "Kill Aura", "Aura", nil, Color3.fromRGB(0, 150, 255), "AuraKeybind")
-AddPremiumToggle(CombatPage, "Aura Team Guard", "TeamCheckAura")
-AddPremiumToggle(CombatPage, "Aura Wall Occlusion", "AuraWallCheck")
-AddPremiumSlider(CombatPage, "Aura Field Radius", 5, 150, "AuraRadius")
-AddPremiumSlider(CombatPage, "Aura Smoothness", 0, 10, "AuraSmoothness")
-AddPremiumSlider(CombatPage, "Aura Transparency", 0, 100, "AuraTransparency")
-AddPremiumToggle(CombatPage, "Priority Lowest Health", "PriorityLowestHealth")
-
-AddCategory(PlayerPage, "Character Settings")
-AddPremiumToggle(PlayerPage, "Head Bow", "BowDown", nil, nil, nil)
-AddPremiumSlider(PlayerPage, "Bow Angle", 0, 90, "BowAngle")
-AddPremiumToggle(PlayerPage, "Auto Farm Player", "AutoFarmPlayer", nil, Color3.fromRGB(45, 140, 75))
-AddPremiumSlider(PlayerPage, "Farm Delay", 0.01, 5, "AutoFarmDelay")
-AddPremiumToggle(PlayerPage, "FullBright", "FullBright", function(state)
+CreateCategory("--- Visuals & ESP ---")
+CreateToggle("Master ESP Toggle", "EspMaster")
+CreateToggle("Show ESP Box", "EspBox")
+CreateToggle("Show ESP Tracer", "EspTracer")
+CreateToggle("Show Name Tags", "EspName")
+CreateToggle("Show Health Bar", "EspHealth")
+CreateSlider("ESP Transparency", "EspTransparency", 0, 100, false)
+CreateSlider("Max Distance", "MaxDistance", 100, 5000, false)
+CreateToggle("FullBright", "FullBright", function(state)
     if state then Lighting.Ambient = Color3.fromRGB(255, 255, 255) Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
     else Lighting.Ambient = Config.StoredAmbient Lighting.OutdoorAmbient = Config.StoredOutdoorAmbient end
 end)
-AddPremiumToggle(PlayerPage, "Spinbot", "Spinbot", nil, nil, "SpinbotKeybind")
-AddPremiumSlider(PlayerPage, "Spin Speed", 5, 100, "SpinSpeed")
+CreateToggle("Show FOV Circle", "FovCircle")
+CreateSlider("FOV Radius", "FovRadius", 30, 500, false)
+CreateToggle("Show Crosshair Dot", "CrosshairDot")
 
-AddCategory(MovementPage, "Speed")
-AddPremiumToggle(MovementPage, "Speed (toggle on/off)", "SpeedToggle", nil, Color3.fromRGB(140, 30, 230), "SpeedKeybind")
-AddPremiumSlider(MovementPage, "Speed Value", 16, 200, "WalkSpeed")
-AddCategory(MovementPage, "Jump")
-AddPremiumToggle(MovementPage, "Jump (toggle on/off)", "JumpToggle", nil, nil, "JumpKeybind")
-AddPremiumSlider(MovementPage, "Jump Power", 50, 350, "JumpPower")
-AddCategory(MovementPage, "Fly")
-AddPremiumToggle(MovementPage, "Fly (toggle on/off)", "FlyToggle", nil, Color3.fromRGB(200, 150, 50), "FlyKeybind")
-AddPremiumSlider(MovementPage, "Fly Speed", 10, 300, "FlySpeed")
+CreateCategory("--- Mobile & Misc ---")
+CreateToggle("Lock Mobile Buttons", "LockMobileButtons")
+CreateToggle("Show Mobile Aimbot", "ShowMobileAim")
+CreateToggle("Show Mobile Trigger", "ShowMobileTrig")
+CreateToggle("Show Mobile Speed", "ShowMobileSpeed")
+CreateToggle("Show Mobile Farm", "ShowMobileFarm")
+CreateToggle("Show Mobile Aura", "ShowMobileAura")
+CreateToggle("Show Mobile Fly", "ShowMobileFly")
+CreateToggle("Show Mobile 3rd P", "ShowMobileTP")
+CreateToggle("Force Third Person", "ThirdPerson")
+CreateSlider("Third Person Dist", "ThirdPersonDist", 5, 100, false)
+CreateToggle("Anti-AFK", "AntiAFK")
 
-AddCategory(VisualPage, "ESP Settings")
-AddPremiumToggle(VisualPage, "Master ESP Control", "EspMaster", nil, Color3.fromRGB(30, 140, 230), "EspMasterKeybind")
-AddPremiumToggle(VisualPage, "ESP Box", "EspBox")
-AddPremiumSlider(VisualPage, "Box Transparency", 0, 100, "EspTransparency")
-AddPremiumToggle(VisualPage, "ESP Tracer", "EspTracer")
-AddPremiumToggle(VisualPage, "Name Tags", "EspName")
-AddPremiumToggle(VisualPage, "Health Meter", "EspHealth") 
-AddPremiumSlider(VisualPage, "Max Distance", 100, 5000, "MaxDistance")
-
-AddCategory(MiscPage, "View & AFK")
-AddPremiumToggle(MiscPage, "Third Person", "ThirdPerson", nil, nil, nil)
-AddPremiumSlider(MiscPage, "Third Person Dist", 5, 100, "ThirdPersonDist")
-AddPremiumToggle(MiscPage, "FOV Circle", "FovCircle")
-AddPremiumSlider(MiscPage, "FOV Radius", 30, 500, "FovRadius")
-AddPremiumToggle(MiscPage, "Crosshair Dot", "CrosshairDot")
-AddPremiumToggle(MiscPage, "Anti-AFK", "AntiAFK", nil, Color3.fromRGB(210, 50, 140))
-
-AddCategory(MiscPage, "Mobile Settings")
-AddPremiumToggle(MiscPage, "Lock Mobile Buttons", "LockMobileButtons", nil, Color3.fromRGB(200, 50, 50))
-AddPremiumToggle(MiscPage, "Show 3RD Button", "ShowMobileTP", function(state) GlobalMobileButtons["ThirdPerson"].Btn.Visible = (state and IsMobile) end)
-AddPremiumToggle(MiscPage, "Show Aura Button", "ShowMobileAura", function(state) GlobalMobileButtons["Aura"].Btn.Visible = (state and IsMobile) end)
-AddPremiumToggle(MiscPage, "Show Aim Button", "ShowMobileAim", function(state) GlobalMobileButtons["Aimbot"].Btn.Visible = (state and IsMobile) end)
-AddPremiumToggle(MiscPage, "Show Trig Button", "ShowMobileTrig", function(state) GlobalMobileButtons["Triggerbot"].Btn.Visible = (state and IsMobile) end)
-AddPremiumToggle(MiscPage, "Show Speed Button", "ShowMobileSpeed", function(state) GlobalMobileButtons["SpeedToggle"].Btn.Visible = (state and IsMobile) end)
-AddPremiumToggle(MiscPage, "Show Farm Button", "ShowMobileFarm", function(state) GlobalMobileButtons["AutoFarmPlayer"].Btn.Visible = (state and IsMobile) end)
-AddPremiumToggle(MiscPage, "Show Fly Button", "ShowMobileFly", function(state) GlobalMobileButtons["FlyToggle"].Btn.Visible = (state and IsMobile) end)
-
-AddPremiumButton(MiscPage, "System", "UNINJECT", function()
-    MasterLoop:Disconnect()
-    pcall(function() FOV_Drawing:Remove() end)
-    pcall(function() Dot_Drawing:Remove() end)
-    pcall(function() AuraVisual:Remove() end)
-    pcall(function() mouse1release() end)
-    for _, L in pairs(Tracer_Cache) do pcall(function() L:Remove() end) end
-    for C, _ in pairs(Character_Cache) do CleanCharacterVisuals(C) end
-    for neck, origC0 in pairs(NeckCache) do if neck and neck.Parent then pcall(function() neck.C0 = origC0 end) end end
-    LocalPlayer.CameraMinZoomDistance = 0.5
-    LocalPlayer.CameraMaxZoomDistance = 400
-    Lighting.Ambient = Config.StoredAmbient
-    Lighting.OutdoorAmbient = Config.StoredOutdoorAmbient
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        local myRoot = LocalPlayer.Character.HumanoidRootPart
-        if myRoot:FindFirstChild("WangFlyBG") then myRoot.WangFlyBG:Destroy() end
-        if myRoot:FindFirstChild("WangFlyBV") then myRoot.WangFlyBV:Destroy() end
-    end
-    ScreenGui:Destroy()
-end)
-
-AddPremiumCreditBox(CreditsPage, "Architecture Designer", "Wang")
-AddPremiumCreditBox(CreditsPage, "Framework Status", "V7.8 (Inline Compact + Categories)")
-
-CreatePremiumTab("Combat", "⚔", 1, CombatPage)
-CreatePremiumTab("Player", "👤", 2, PlayerPage)
-CreatePremiumTab("Movement", "🏃", 3, MovementPage)
-CreatePremiumTab("Visuals", "👁", 4, VisualPage)
-CreatePremiumTab("Misc", "⚙", 5, MiscPage)
-CreatePremiumTab("Credits", "👑", 6, CreditsPage)
-
-local function RegisterMobileClick(Btn, Key)
-    RegisterTouchFriendlyClick(Btn, function() Config[Key] = not Config[Key] UpdateToggleVisual(Key) end)
-end
-RegisterMobileClick(MobAim, "Aimbot")
-RegisterMobileClick(MobTrig, "Triggerbot")
-RegisterMobileClick(MobSpeed, "SpeedToggle")
-RegisterMobileClick(MobFarm, "AutoFarmPlayer")
-RegisterMobileClick(MobAura, "Aura")
-RegisterMobileClick(MobTP, "ThirdPerson")
-RegisterMobileClick(MobFly, "FlyToggle")
 UserInputService.InputBegan:Connect(function(input, processed)
     if processed then return end
     if input.KeyCode == Config.MenuKeybind then Config.MenuVisible = not Config.MenuVisible MainFrame.Visible = Config.MenuVisible
-    elseif input.KeyCode == Config.AimbotKeybind and Config.AimbotKeybind ~= Enum.KeyCode.Unknown then Config.Aimbot = not Config.Aimbot UpdateToggleVisual("Aimbot")
-    elseif input.KeyCode == Config.AuraKeybind and Config.AuraKeybind ~= Enum.KeyCode.Unknown then Config.Aura = not Config.Aura UpdateToggleVisual("Aura")
-    elseif input.KeyCode == Config.TriggerbotKeybind and Config.TriggerbotKeybind ~= Enum.KeyCode.Unknown then Config.Triggerbot = not Config.Triggerbot UpdateToggleVisual("Triggerbot")
-    elseif input.KeyCode == Config.SpinbotKeybind and Config.SpinbotKeybind ~= Enum.KeyCode.Unknown then Config.Spinbot = not Config.Spinbot UpdateToggleVisual("Spinbot")
-    elseif input.KeyCode == Config.EspMasterKeybind and Config.EspMasterKeybind ~= Enum.KeyCode.Unknown then Config.EspMaster = not Config.EspMaster UpdateToggleVisual("EspMaster")
-    elseif input.KeyCode == Config.SpeedKeybind and Config.SpeedKeybind ~= Enum.KeyCode.Unknown then Config.SpeedToggle = not Config.SpeedToggle UpdateToggleVisual("SpeedToggle")
-    elseif input.KeyCode == Config.JumpKeybind and Config.JumpKeybind ~= Enum.KeyCode.Unknown then Config.JumpToggle = not Config.JumpToggle UpdateToggleVisual("JumpToggle")
-    elseif input.KeyCode == Config.FlyKeybind and Config.FlyKeybind ~= Enum.KeyCode.Unknown then Config.FlyToggle = not Config.FlyToggle UpdateToggleVisual("FlyToggle")
+    elseif input.KeyCode == Config.AimbotKeybind and Config.AimbotKeybind ~= Enum.KeyCode.Unknown then Config.Aimbot = not Config.Aimbot for _, r in pairs(UI_Refresh_Functions) do pcall(r) end
+    elseif input.KeyCode == Config.AuraKeybind and Config.AuraKeybind ~= Enum.KeyCode.Unknown then Config.Aura = not Config.Aura for _, r in pairs(UI_Refresh_Functions) do pcall(r) end
+    elseif input.KeyCode == Config.TriggerbotKeybind and Config.TriggerbotKeybind ~= Enum.KeyCode.Unknown then Config.Triggerbot = not Config.Triggerbot for _, r in pairs(UI_Refresh_Functions) do pcall(r) end
+    elseif input.KeyCode == Config.SpinbotKeybind and Config.SpinbotKeybind ~= Enum.KeyCode.Unknown then Config.Spinbot = not Config.Spinbot for _, r in pairs(UI_Refresh_Functions) do pcall(r) end
+    elseif input.KeyCode == Config.EspMasterKeybind and Config.EspMasterKeybind ~= Enum.KeyCode.Unknown then Config.EspMaster = not Config.EspMaster for _, r in pairs(UI_Refresh_Functions) do pcall(r) end
+    elseif input.KeyCode == Config.SpeedKeybind and Config.SpeedKeybind ~= Enum.KeyCode.Unknown then Config.SpeedToggle = not Config.SpeedToggle for _, r in pairs(UI_Refresh_Functions) do pcall(r) end
+    elseif input.KeyCode == Config.JumpKeybind and Config.JumpKeybind ~= Enum.KeyCode.Unknown then Config.JumpToggle = not Config.JumpToggle for _, r in pairs(UI_Refresh_Functions) do pcall(r) end
+    elseif input.KeyCode == Config.FlyKeybind and Config.FlyKeybind ~= Enum.KeyCode.Unknown then Config.FlyToggle = not Config.FlyToggle for _, r in pairs(UI_Refresh_Functions) do pcall(r) end
     end
 end)
 
@@ -1091,7 +830,6 @@ pcall(function()
         end
     end)
 end)
-
 local function RenderVisuals(Player, Character)
     if not Character or not Character.Parent then return end
     local Root = Character:WaitForChild("HumanoidRootPart", 5)
@@ -1106,7 +844,7 @@ local function RenderVisuals(Player, Character)
     Gui.Name = "WangInfoTag" Gui.Adornee = Head Gui.Size = UDim2.new(0, 200, 0, 100) Gui.StudsOffset = Vector3.new(0, 4, 0) Gui.AlwaysOnTop = true
 
     local Label = Instance.new("TextLabel", Gui)
-    Label.Size = UDim2.new(1, 0, 0, 40) Label.BackgroundTransparency = 1 Label.Font = Enum.Font.Code Label.TextSize = 13 Label.TextColor3 = Config.EspColor
+    Label.Size = UDim2.new(1, 0, 0, 40) Label.BackgroundTransparency = 1 Label.Font = Enum.Font.GothamBold Label.TextSize = 13 Label.TextColor3 = Config.EspColor
     
     local HealthBG = Instance.new("Frame", Gui)
     HealthBG.Name = "HealthBG" HealthBG.BackgroundColor3 = Color3.fromRGB(40, 0, 0) HealthBG.BorderSizePixel = 1 HealthBG.Position = UDim2.new(0.25, 0, 0, 45) HealthBG.Size = UDim2.new(0.5, 0, 0, 5) HealthBG.Visible = false
@@ -1123,6 +861,7 @@ local function MonitorPlayer(Player)
     Player.CharacterAdded:Connect(function(Char) task.spawn(RenderVisuals, Player, Char) end)
     if Player.Character then task.spawn(RenderVisuals, Player, Player.Character) end
 end
+
 MasterLoop = RunService.RenderStepped:Connect(function()
     local ScreenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
     local ScreenBottom = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
@@ -1143,19 +882,15 @@ MasterLoop = RunService.RenderStepped:Connect(function()
             if Config.JumpToggle then MyHum.UseJumpPower = true MyHum.JumpPower = Config.JumpPower end
             
             if Config.FlyToggle then
-                local bg = MyRoot:FindFirstChild("WangFlyBG") or Instance.new("BodyGyro")
-                bg.Name = "WangFlyBG" bg.P = 9e4 bg.maxTorque = Vector3.new(9e9, 9e9, 9e9) bg.Parent = MyRoot
-                local bv = MyRoot:FindFirstChild("WangFlyBV") or Instance.new("BodyVelocity")
-                bv.Name = "WangFlyBV" bv.maxForce = Vector3.new(9e9, 9e9, 9e9) bv.Parent = MyRoot
+                local bg = MyRoot:FindFirstChild("WangFlyBG") or Instance.new("BodyGyro") bg.Name = "WangFlyBG" bg.P = 9e4 bg.maxTorque = Vector3.new(9e9, 9e9, 9e9) bg.Parent = MyRoot
+                local bv = MyRoot:FindFirstChild("WangFlyBV") or Instance.new("BodyVelocity") bv.Name = "WangFlyBV" bv.maxForce = Vector3.new(9e9, 9e9, 9e9) bv.Parent = MyRoot
                 
                 local moveDir = MyHum.MoveDirection
                 local flyVel = moveDir * Config.FlySpeed
                 if UserInputService:IsKeyDown(Enum.KeyCode.Space) then flyVel = flyVel + Vector3.new(0, Config.FlySpeed, 0) end
                 if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then flyVel = flyVel - Vector3.new(0, Config.FlySpeed, 0) end
                 bv.velocity = flyVel
-                
-                if moveDir.Magnitude > 0 then bg.cframe = CFrame.new(MyRoot.Position, MyRoot.Position + moveDir)
-                else bg.cframe = Camera.CFrame end
+                if moveDir.Magnitude > 0 then bg.cframe = CFrame.new(MyRoot.Position, MyRoot.Position + moveDir) else bg.cframe = Camera.CFrame end
             else
                 if MyRoot:FindFirstChild("WangFlyBG") then MyRoot.WangFlyBG:Destroy() end
                 if MyRoot:FindFirstChild("WangFlyBV") then MyRoot.WangFlyBV:Destroy() end
@@ -1171,8 +906,7 @@ MasterLoop = RunService.RenderStepped:Connect(function()
         local neckJoint = (headInstance and headInstance:FindFirstChild("Neck")) or (torsoInstance and torsoInstance:FindFirstChild("Neck"))
         if neckJoint and neckJoint:IsA("Motor6D") then
             if not NeckCache[neckJoint] then NeckCache[neckJoint] = neckJoint.C0 end
-            if Config.BowDown then neckJoint.C0 = NeckCache[neckJoint] * CFrame.Angles(math.rad(-Config.BowAngle), 0, 0)
-            else neckJoint.C0 = NeckCache[neckJoint] end
+            if Config.BowDown then neckJoint.C0 = NeckCache[neckJoint] * CFrame.Angles(math.rad(-Config.BowAngle), 0, 0) else neckJoint.C0 = NeckCache[neckJoint] end
         end
         
         if Config.Aura then
@@ -1209,7 +943,12 @@ MasterLoop = RunService.RenderStepped:Connect(function()
             Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, Target.Position), LerpFactor)
         end
     end
-
+end)
+RunService.RenderStepped:Connect(function()
+    local ScreenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+    local ScreenBottom = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
+    local MyChar = LocalPlayer.Character
+    
     for Char, Data in pairs(Character_Cache) do
         if Char and Char.Parent and IsAlive(Char) then
             local Root = Char:FindFirstChild("HumanoidRootPart")
@@ -1236,7 +975,8 @@ Players.PlayerAdded:Connect(function(Player) CreateTracerObject(Player) MonitorP
 Players.PlayerRemoving:Connect(function(Player) ClearTracerObject(Player) end)
 
 for _, P in pairs(Players:GetPlayers()) do CreateTracerObject(P) MonitorPlayer(P) end
-for K, _ in pairs(GlobalSyncToggles) do UpdateToggleVisual(K) end
+
+for _, refresh in pairs(UI_Refresh_Functions) do pcall(refresh) end
 
 task.spawn(function()
     while task.wait(3) do
@@ -1247,10 +987,10 @@ end)
 pcall(function()
     StarterGui:SetCore("SendNotification", {
         Title = "WANGCAOS CLIENT V7.8",
-        Text = "Original Tab GUI loaded with Compact Visuals!",
+        Text = "Standard UI Compact + English Categories loaded successfully!",
         Duration = 7
     })
 end)
 -- ==============================================================================
--- END OF SCRIPT - WANG V7.8 COMPACT DESIGN
+-- END OF SCRIPT - DESIGNED FOR WANG (2026)
 -- ==============================================================================
