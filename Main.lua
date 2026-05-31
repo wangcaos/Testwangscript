@@ -231,7 +231,7 @@ end
 local function CleanCharacterVisuals(Character)
     if not Character then return end
     if Character_Cache[Character] then
-        pcall(function() Character_Cache[Character].Box.Visible = false Character_Cache[Character].Box:Remove() end)
+        pcall(function() Character_Cache[Character].Box:Destroy() end)
         pcall(function() Character_Cache[Character].Gui:Destroy() end)
         Character_Cache[Character] = nil
     end
@@ -288,7 +288,6 @@ local function CheckWallOcclusion(TargetPart, Character)
     local Params = RaycastParams.new(); Params.FilterType = Enum.RaycastFilterType.Exclude; Params.FilterDescendantsInstances = {LocalPlayer.Character, Character, Camera}
     return workspace:Raycast(Origin, Direction, Params) == nil
 end
-
 local function CheckTriggerWall(Position)
     if not Config.TriggerWallCheck then return true end
     local Origin = Camera.CFrame.Position; local Direction = Position - Origin
@@ -385,6 +384,7 @@ local function GetAuraTarget()
     end
     return BestTarget
 end
+
 local function GetPlayerColor(Player)
     if Config.EspTeamCheck and IsTeammate(Player) then return Color3.fromRGB(0, 255, 0) end
     return Config.EspColor
@@ -489,7 +489,6 @@ local function RegisterTouchFriendlyClick(TextButton, Callback)
     TextButton.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.Touch then HoldingTouch = true end end)
     TextButton.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.Touch then if HoldingTouch then HoldingTouch = false Callback() end end end)
 end
-
 local function CreateIndependentMobileButton(Name, TextOn, TextOff, Key, ShowKey, DefaultColor, InitPos)
     local xs = Config["MobilePos_"..Key.."_XS"] or InitPos.X.Scale
     local xo = Config["MobilePos_"..Key.."_XO"] or InitPos.X.Offset
@@ -537,6 +536,7 @@ TogStroke.Color = Color3.fromRGB(60, 60, 60); TogStroke.Thickness = 1
 ToggleButton.Visible = IsMobile
 GlobalMobileButtons["MainLogo"] = { Btn = ToggleButton }
 MakeDraggable(ToggleButton, ToggleButton, "MainLogo")
+
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
@@ -648,7 +648,6 @@ local function CreateSectionTitle(Page, Text)
     Instance.new("UIPadding", Title).PaddingLeft = UDim.new(0, 4) 
     return Title
 end
-
 local function CreatePremiumTab(Name, IconText, Order, TargetPage)
     local TabBtn = Instance.new("TextButton", TabMenuContainer)
     TabBtn.BackgroundColor3 = Style_Bg 
@@ -772,6 +771,7 @@ local function AddPremiumToggle(Page, LabelText, Key, Callback, DefMobColor, Bin
             if NewKey then Config[BindKey] = NewKey BindBtn.Text = NewKey.Name:upper() else BindBtn.Text = Config[BindKey] and Config[BindKey].Name or "NONE" end
             BindBtn.TextColor3 = Style_Text_Primary
         end
+        
         RegisterTouchFriendlyClick(BindBtn, function()
             if Listening then return end
             Listening = true; BindBtn.Text = "..."; BindBtn.TextColor3 = Color3.fromRGB(255, 255, 100)
@@ -783,7 +783,6 @@ local function AddPremiumToggle(Page, LabelText, Key, Callback, DefMobColor, Bin
     end
     table.insert(UI_Refresh_Functions, function() UpdateToggleVisual(Key) end)
 end
-
 local function AddPremiumSlider(Page, LabelText, Min, Max, Key, Callback)
     local SFrame = Instance.new("Frame", Page)
     SFrame.BackgroundColor3 = Style_SubBg
@@ -927,7 +926,6 @@ local function AddHitboxSelector(Page)
     end)
     table.insert(UI_Refresh_Functions, function() HitboxBtn.Text = Config.TargetPart:upper() end)
 end
-
 local function AddSyncedEspColorSelector(Page)
     local CFrame = Instance.new("Frame", Page)
     CFrame.BackgroundColor3 = Style_SubBg
@@ -1089,7 +1087,6 @@ local function AddExportBox(Page)
         end
     end)
 end
-
 local function AddImportBox(Page)
     local TFrame = Instance.new("Frame", Page)
     TFrame.BackgroundColor3 = Style_SubBg
@@ -1207,7 +1204,6 @@ AddPremiumToggle(PlayerPage, "FullBright Atmosphere", "FullBright", function(sta
     if state then Lighting.Ambient = Color3.fromRGB(255, 255, 255) Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
     else Lighting.Ambient = Config.StoredAmbient Lighting.OutdoorAmbient = Config.StoredOutdoorAmbient end
 end)
-
 -- --- MOVEMENT PAGE ---
 CreateSectionTitle(MovementPage, "Character Flight")
 AddPremiumToggle(MovementPage, "Enable Flight Hack", "Fly", ToggleFlyState, Color3.fromRGB(0, 255, 255), "FlyKeybind")
@@ -1223,7 +1219,7 @@ AddPremiumSlider(MovementPage, "Jump Force Magnitude", 50, 350, "JumpPower")
 CreateSectionTitle(VisualPage, "Character ESP")
 AddPremiumToggle(VisualPage, "Master ESP Overlay Control", "EspMaster", nil, Color3.fromRGB(30, 140, 230), "EspMasterKeybind")
 AddPremiumToggle(VisualPage, "ESP Team Guard (Green)", "EspTeamCheck")
-AddPremiumToggle(VisualPage, "Render 2D ESP Box", "EspBox")
+AddPremiumToggle(VisualPage, "Render 3D Chams Box", "EspBox")
 AddPremiumSlider(VisualPage, "ESP Opacity Multiplier", 0, 100, "EspTransparency")
 AddPremiumToggle(VisualPage, "Snapline Tracers Vector", "EspTracer")
 AddTracerModeSelector(VisualPage)
@@ -1266,7 +1262,7 @@ AddPremiumButton(MiscPage, "Uninject Execution Process", "UNINJECT NOW", functio
     ToggleFlyState(false)
     for _, L in pairs(Tracer_Cache) do pcall(function() L:Remove() end) end
     for C, Data in pairs(Character_Cache) do 
-        pcall(function() Data.Box:Remove() end)
+        pcall(function() Data.Box:Destroy() end)
         CleanCharacterVisuals(C) 
     end
     for neck, origC0 in pairs(NeckCache) do if neck and neck.Parent then pcall(function() neck.C0 = origC0 end) end end
@@ -1336,34 +1332,22 @@ local function RenderVisuals(Player, Character)
     if not Root or not Head then return end
     
     CleanCharacterVisuals(Character)
-    
-    -- Using proper 2D Drawing for ESP Box instead of solid block highlight
-    local Box = Drawing.new("Square")
-    Box.Thickness = 1.5
-    Box.Filled = false
-    Box.Visible = false
-    Box.ZIndex = 2
+    local Box = Instance.new("BoxHandleAdornment")
+    Box.Name = "WangBoxFill" Box.Parent = Root Box.Adornee = Root Box.AlwaysOnTop = true Box.ZIndex = 10 Box.Size = Vector3.new(4, 6, 4) Box.Visible = false
 
     local Gui = Instance.new("BillboardGui")
-    Gui.Name = "WangInfoTag" Gui.Adornee = Head 
-    Gui.Size = UDim2.new(0, 150, 0, 80) 
-    Gui.StudsOffset = Vector3.new(0, 4, 0) Gui.AlwaysOnTop = true
+    Gui.Name = "WangInfoTag" Gui.Adornee = Head Gui.Size = UDim2.new(0, 200, 0, 100) Gui.StudsOffset = Vector3.new(0, 4, 0) Gui.AlwaysOnTop = true
 
     local Label = Instance.new("TextLabel", Gui)
-    Label.Size = UDim2.new(1, 0, 0, 30) Label.BackgroundTransparency = 1 
-    Label.Font = Enum.Font.Code 
-    Label.TextSize = 12 Label.TextColor3 = Config.EspColor
+    Label.Size = UDim2.new(1, 0, 0, 40) Label.BackgroundTransparency = 1 Label.Font = Enum.Font.Code Label.TextSize = 13 Label.TextColor3 = Config.EspColor
     
     local HealthBG = Instance.new("Frame", Gui)
-    HealthBG.Name = "HealthBG" HealthBG.BackgroundColor3 = Color3.fromRGB(40, 0, 0) HealthBG.BorderSizePixel = 0 
-    HealthBG.Position = UDim2.new(0, 0, 0, 35) HealthBG.Size = UDim2.new(1, 0, 0, 3) HealthBG.Visible = false
+    HealthBG.Name = "HealthBG" HealthBG.BackgroundColor3 = Color3.fromRGB(40, 0, 0) HealthBG.BorderSizePixel = 1 HealthBG.Position = UDim2.new(0.25, 0, 0, 45) HealthBG.Size = UDim2.new(0.5, 0, 0, 5) HealthBG.Visible = false
     
     local HealthBar = Instance.new("Frame", HealthBG)
-    HealthBar.Name = "HealthBar" HealthBar.BackgroundColor3 = Color3.fromRGB(0, 255, 100) 
-    HealthBar.BorderSizePixel = 0 HealthBar.Size = UDim2.new(1, 0, 1, 0)
+    HealthBar.Name = "HealthBar" HealthBar.BackgroundColor3 = Color3.fromRGB(0, 255, 100) HealthBar.BorderSizePixel = 0 HealthBar.Size = UDim2.new(1, 0, 1, 0)
 
-    -- Đã sửa Parent thành ScreenGui ở đây
-    Gui.Parent = ScreenGui
+    Gui.Parent = Head
     Character_Cache[Character] = { Box = Box, Gui = Gui, Label = Label, HealthBG = HealthBG, HealthBar = HealthBar, Player = Player }
 end
 
@@ -1386,8 +1370,7 @@ MasterLoop = RunService.RenderStepped:Connect(function()
 
     if Config.ThirdPerson then LocalPlayer.CameraMinZoomDistance = Config.ThirdPersonDist LocalPlayer.CameraMaxZoomDistance = Config.ThirdPersonDist
     else LocalPlayer.CameraMinZoomDistance = 0.5 LocalPlayer.CameraMaxZoomDistance = 400 end
-
-    local MyChar = LocalPlayer.Character
+            local MyChar = LocalPlayer.Character
     local MyRoot = MyChar and MyChar:FindFirstChild("HumanoidRootPart")
     
     if IsAlive(MyChar) and MyRoot then
@@ -1462,40 +1445,22 @@ MasterLoop = RunService.RenderStepped:Connect(function()
     for Char, Data in pairs(Character_Cache) do
         if Char and Char.Parent and IsAlive(Char) then
             local Root = Char:FindFirstChild("HumanoidRootPart")
-            local Head = Char:FindFirstChild("Head")
             local Hum = Char:FindFirstChildOfClass("Humanoid")
             
             local isTarget = true 
             
-            if Config.EspMaster and Root and Head and MyChar and MyChar:FindFirstChild("HumanoidRootPart") and Hum and isTarget then
+            if Config.EspMaster and Root and MyChar and MyChar:FindFirstChild("HumanoidRootPart") and Hum and isTarget then
                 local PColor = GetPlayerColor(Data.Player)
                 local Dist = math.floor((Root.Position - MyChar.HumanoidRootPart.Position).Magnitude)
-                local RootPos, OnScreen = Camera:WorldToViewportPoint(Root.Position)
 
-                -- 2D Box Logic Implementation
-                -- Đã thêm kiểm tra logic chiều sâu Z ở đây!
-                local HeadPos = Camera:WorldToViewportPoint(Head.Position + Vector3.new(0, 0.5, 0))
-                local LegPos = Camera:WorldToViewportPoint(Root.Position - Vector3.new(0, 3, 0))
-
-                if Config.EspBox and Dist <= Config.MaxDistance and OnScreen and HeadPos.Z > 0 and LegPos.Z > 0 then 
-                    local height = math.abs(HeadPos.Y - LegPos.Y)
-                    local width = height / 2
-                    Data.Box.Size = Vector2.new(width, height)
-                    Data.Box.Position = Vector2.new(RootPos.X - width / 2, math.min(HeadPos.Y, LegPos.Y))
-                    Data.Box.Color = PColor
-                    Data.Box.Transparency = 1 - (Config.EspTransparency / 100)
-                    Data.Box.Visible = true 
-                else 
-                    Data.Box.Visible = false 
-                end
-
+                if Config.EspBox and Dist <= Config.MaxDistance then Data.Box.Visible = true Data.Box.Color3 = PColor Data.Box.Transparency = Config.EspTransparency / 100 else Data.Box.Visible = false end
                 if Config.EspName and Dist <= Config.MaxDistance then Data.Gui.Enabled = true Data.Label.Visible = true Data.Label.TextColor3 = PColor Data.Label.Text = string.format("%s (%dm)\\n[%s] [%s]", Data.Player.Name, Dist, Data.Player.Team and Data.Player.Team.Name or "No Team", GetEquippedTool(Char)) else Data.Label.Visible = false end
                 if Config.EspHealth and Dist <= Config.MaxDistance then Data.Gui.Enabled = true Data.HealthBG.Visible = true local HealthPercent = math.clamp(Hum.Health / Hum.MaxHealth, 0, 1) Data.HealthBar.Size = UDim2.new(HealthPercent, 0, 1, 0) Data.HealthBar.BackgroundColor3 = Color3.fromHSV(HealthPercent * 0.35, 1, 1) else Data.HealthBG.Visible = false end
 
                 local Tracer = Tracer_Cache[Data.Player]
                 if Tracer and Config.EspTracer and Dist <= Config.MaxDistance then
-                    local Leg, IsTracerOnScreen = Camera:WorldToViewportPoint(Root.Position - Vector3.new(0, 3, 0))
-                    if IsTracerOnScreen then Tracer.From = Config.TracerMode == "Center" and ScreenCenter or ScreenBottom Tracer.To = Vector2.new(Leg.X, Leg.Y) Tracer.Color = PColor Tracer.Visible = true else Tracer.Visible = false end
+                    local Leg, OnScreen = Camera:WorldToViewportPoint(Root.Position - Vector3.new(0, 3, 0))
+                    if OnScreen then Tracer.From = Config.TracerMode == "Center" and ScreenCenter or ScreenBottom Tracer.To = Vector2.new(Leg.X, Leg.Y) Tracer.Color = PColor Tracer.Visible = true else Tracer.Visible = false end
                 elseif Tracer then Tracer.Visible = false end
             else Data.Box.Visible = false Data.Label.Visible = false Data.HealthBG.Visible = false if Tracer_Cache[Data.Player] then Tracer_Cache[Data.Player].Visible = false end end
         else CleanCharacterVisuals(Char) Character_Cache[Char] = nil end
@@ -1509,7 +1474,7 @@ for _, P in pairs(Players:GetPlayers()) do CreateTracerObject(P) MonitorPlayer(P
 for K, _ in pairs(GlobalSyncToggles) do UpdateToggleVisual(K) end
 
 pcall(function()
-    StarterGui:SetCore("SendNotification", {Title = "WANGCAOS CLIENT V6.9.4", Text = "Loaded Modern Compact Edition (2D Box) successfully!", Duration = 5})
+    StarterGui:SetCore("SendNotification", {Title = "WANGCAOS CLIENT V6.9.4", Text = "Loaded Modern Compact Edition (3D Chams) successfully!", Duration = 5})
 end)
 -- ==============================================================================
 -- END OF SCRIPT - MODERN COMPACT EDITION CREATED BY BE FOR DAI CA WANG (2026)
