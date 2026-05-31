@@ -1,5 +1,5 @@
 -- ==============================================================================
--- WANGCAOS PREMIUM CLIENT V7.8 - COMPACT STANDARD GUI + AUTOSAVE
+-- WANGCAOS PREMIUM CLIENT V7.9 - SUPER COMPACT + SLIDER TOGGLES
 -- ALL RIGHTS RESERVED BY WANG (2026)
 -- ==============================================================================
 
@@ -497,11 +497,11 @@ local function CreateIndependentMobileButton(Name, TextOn, TextOff, Key, ShowKey
     ShortcutBtn.BackgroundColor3 = DefaultColor
     ShortcutBtn.BackgroundTransparency = 0.2
     ShortcutBtn.Position = UDim2.new(xs, xo, ys, yo)
-    ShortcutBtn.Size = UDim2.new(0, 50, 0, 50)
+    ShortcutBtn.Size = UDim2.new(0, 45, 0, 45)
     ShortcutBtn.Font = Enum.Font.GothamBold
     ShortcutBtn.Text = TextOff
     ShortcutBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    ShortcutBtn.TextSize = 10
+    ShortcutBtn.TextSize = 9
     ShortcutBtn.Visible = (Config[ShowKey] and IsMobile)
     Instance.new("UICorner", ShortcutBtn).CornerRadius = UDim.new(1, 0)
     local Stroke = Instance.new("UIStroke", ShortcutBtn) Stroke.Color = Color3.fromRGB(255, 255, 255) Stroke.Thickness = 1.5
@@ -537,12 +537,12 @@ ToggleButton.Parent = ScreenGui
 ToggleButton.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 ToggleButton.BackgroundTransparency = 0.2
 ToggleButton.Position = UDim2.new(lxs, lxo, lys, lyo)
-ToggleButton.Size = UDim2.new(0, 45, 0, 45)
+ToggleButton.Size = UDim2.new(0, 40, 0, 40)
 ToggleButton.Font = Enum.Font.GothamBold
 ToggleButton.Text = "W"
 ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleButton.TextSize = 20
-Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(0, 8)
+ToggleButton.TextSize = 18
+Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(0, 6)
 Instance.new("UIStroke", ToggleButton).Color = Color3.fromRGB(60, 60, 60)
 Instance.new("UIStroke", ToggleButton).Thickness = 1.5
 
@@ -550,68 +550,68 @@ ToggleButton.Visible = IsMobile
 GlobalMobileButtons["MainLogo"] = { Btn = ToggleButton }
 MakeDraggable(ToggleButton, ToggleButton, "MainLogo")
 -- ==============================================================================
--- COMPACT MENU GUI (STANDARD STYLE, NO CUSTOM SWITCHES)
+-- TINY MENU GUI WITH SLIDING TOGGLES
 -- ==============================================================================
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainBackgroundFrame"
-MainFrame.Size = UDim2.new(0, 380, 0, 420)
-MainFrame.Position = UDim2.new(0.5, -190, 0.5, -210)
+MainFrame.Size = UDim2.new(0, 260, 0, 300) -- Rất nhỏ
+MainFrame.Position = UDim2.new(0.5, -130, 0.5, -150)
 MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 MainFrame.BorderSizePixel = 0
 MainFrame.Visible = Config.MenuVisible
 MainFrame.Parent = ScreenGui
 
 local TitleBar = Instance.new("Frame")
-TitleBar.Size = UDim2.new(1, 0, 0, 30)
+TitleBar.Size = UDim2.new(1, 0, 0, 24)
 TitleBar.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
 TitleBar.BorderSizePixel = 0
 TitleBar.Parent = MainFrame
 
 local TitleText = Instance.new("TextLabel")
 TitleText.Size = UDim2.new(1, -10, 1, 0)
-TitleText.Position = UDim2.new(0, 10, 0, 0)
+TitleText.Position = UDim2.new(0, 8, 0, 0)
 TitleText.BackgroundTransparency = 1
-TitleText.Text = "WANGCAOS CLIENT V7.8"
+TitleText.Text = "WANGCAOS V7.9 TINY"
 TitleText.TextColor3 = Color3.fromRGB(255, 255, 255)
 TitleText.TextXAlignment = Enum.TextXAlignment.Left
 TitleText.Font = Enum.Font.GothamBold
-TitleText.TextSize = 14
+TitleText.TextSize = 11
 TitleText.Parent = TitleBar
 
 local CloseBtn = Instance.new("TextButton")
-CloseBtn.Size = UDim2.new(0, 30, 0, 30)
-CloseBtn.Position = UDim2.new(1, -30, 0, 0)
+CloseBtn.Size = UDim2.new(0, 24, 0, 24)
+CloseBtn.Position = UDim2.new(1, -24, 0, 0)
 CloseBtn.BackgroundTransparency = 1
 CloseBtn.Text = "X"
 CloseBtn.TextColor3 = Color3.fromRGB(255, 50, 50)
 CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.TextSize = 14
+CloseBtn.TextSize = 12
 CloseBtn.Parent = TitleBar
 RegisterTouchFriendlyClick(CloseBtn, function() Config.MenuVisible = false MainFrame.Visible = false end)
 RegisterTouchFriendlyClick(ToggleButton, function() Config.MenuVisible = not Config.MenuVisible MainFrame.Visible = Config.MenuVisible end)
 MakeDraggable(MainFrame, TitleBar, nil)
 
 local TabContainer = Instance.new("ScrollingFrame")
-TabContainer.Size = UDim2.new(1, -16, 1, -40)
-TabContainer.Position = UDim2.new(0, 8, 0, 35)
+TabContainer.Size = UDim2.new(1, -10, 1, -30)
+TabContainer.Position = UDim2.new(0, 5, 0, 26)
 TabContainer.BackgroundTransparency = 1
-TabContainer.ScrollBarThickness = 3
-TabContainer.CanvasSize = UDim2.new(0, 0, 0, 1200)
+TabContainer.ScrollBarThickness = 2
+TabContainer.CanvasSize = UDim2.new(0, 0, 0, 1100)
 TabContainer.Parent = MainFrame
 
 local UIListLayout = Instance.new("UIListLayout")
 UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-UIListLayout.Padding = UDim.new(0, 4) -- Cực gọn
+UIListLayout.Padding = UDim.new(0, 2) -- Khít rịt
 UIListLayout.Parent = TabContainer
 
 local function CreateCategory(TitleName)
     local CategoryLabel = Instance.new("TextLabel")
-    CategoryLabel.Size = UDim2.new(1, 0, 0, 24)
+    CategoryLabel.Size = UDim2.new(1, 0, 0, 20)
     CategoryLabel.BackgroundTransparency = 1
     CategoryLabel.Text = TitleName:upper()
     CategoryLabel.TextColor3 = Color3.fromRGB(0, 170, 255)
     CategoryLabel.Font = Enum.Font.GothamBold
-    CategoryLabel.TextSize = 12
+    CategoryLabel.TextSize = 10
     CategoryLabel.TextXAlignment = Enum.TextXAlignment.Left
     CategoryLabel.Parent = TabContainer
 end
@@ -623,77 +623,88 @@ local RestrictedKeys = {
 
 local function CreateToggle(Text, ConfigKey, Callback)
     local ToggleFrame = Instance.new("Frame")
-    ToggleFrame.Size = UDim2.new(1, 0, 0, 26) -- Kích thước thu gọn
+    ToggleFrame.Size = UDim2.new(1, 0, 0, 22) -- Nhỏ xíu
     ToggleFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
     ToggleFrame.BorderSizePixel = 0
     ToggleFrame.Parent = TabContainer
     Instance.new("UICorner", ToggleFrame).CornerRadius = UDim.new(0, 4)
     
     local Label = Instance.new("TextLabel")
-    Label.Size = UDim2.new(1, -60, 1, 0)
-    Label.Position = UDim2.new(0, 8, 0, 0)
+    Label.Size = UDim2.new(1, -50, 1, 0)
+    Label.Position = UDim2.new(0, 6, 0, 0)
     Label.BackgroundTransparency = 1
     Label.Text = Text
     Label.TextColor3 = Color3.fromRGB(220, 220, 225)
     Label.TextXAlignment = Enum.TextXAlignment.Left
     Label.Font = Enum.Font.Gotham
-    Label.TextSize = 12
+    Label.TextSize = 10
     Label.Parent = ToggleFrame
     
-    local Checkbox = Instance.new("TextButton")
-    Checkbox.Size = UDim2.new(0, 40, 0, 18)
-    Checkbox.Position = UDim2.new(1, -48, 0.5, -9)
-    Checkbox.BackgroundColor3 = Config[ConfigKey] and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(60, 60, 65)
-    Checkbox.Text = Config[ConfigKey] and "ON" or "OFF"
-    Checkbox.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Checkbox.Font = Enum.Font.GothamBold
-    Checkbox.TextSize = 10
-    Checkbox.Parent = ToggleFrame
-    Instance.new("UICorner", Checkbox).CornerRadius = UDim.new(0, 4)
+    local SwitchBG = Instance.new("TextButton")
+    SwitchBG.Size = UDim2.new(0, 32, 0, 14)
+    SwitchBG.Position = UDim2.new(1, -38, 0.5, -7)
+    SwitchBG.BackgroundColor3 = Config[ConfigKey] and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(60, 60, 65)
+    SwitchBG.Text = ""
+    SwitchBG.AutoButtonColor = false
+    SwitchBG.Parent = ToggleFrame
+    Instance.new("UICorner", SwitchBG).CornerRadius = UDim.new(1, 0)
     
-    RegisterTouchFriendlyClick(Checkbox, function()
+    local Knob = Instance.new("Frame")
+    Knob.Size = UDim2.new(0, 10, 0, 10)
+    Knob.Position = Config[ConfigKey] and UDim2.new(1, -12, 0.5, -5) or UDim2.new(0, 2, 0.5, -5)
+    Knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Knob.Parent = SwitchBG
+    Instance.new("UICorner", Knob).CornerRadius = UDim.new(1, 0)
+    
+    RegisterTouchFriendlyClick(SwitchBG, function()
         if RestrictedKeys[ConfigKey] and not IsMobile then
             pcall(function() StarterGui:SetCore("SendNotification", {Title = "WANGCAOS", Text = "Button enable only for PE!", Duration = 3}) end)
             return
         end
         Config[ConfigKey] = not Config[ConfigKey]
+        
+        local targetColor = Config[ConfigKey] and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(60, 60, 65)
+        local targetPos = Config[ConfigKey] and UDim2.new(1, -12, 0.5, -5) or UDim2.new(0, 2, 0.5, -5)
+        TweenService:Create(SwitchBG, TweenInfo.new(0.2), {BackgroundColor3 = targetColor}):Play()
+        TweenService:Create(Knob, TweenInfo.new(0.2), {Position = targetPos}):Play()
+
         for _, refresh in pairs(UI_Refresh_Functions) do pcall(refresh) end
         if Callback then Callback(Config[ConfigKey]) end
     end)
-    GlobalSyncToggles[ConfigKey] = { Btn = Checkbox }
+    GlobalSyncToggles[ConfigKey] = { BG = SwitchBG, Knob = Knob }
 end
 local function CreateSlider(Text, ConfigKey, Min, Max, Decimals)
     local SliderFrame = Instance.new("Frame")
-    SliderFrame.Size = UDim2.new(1, 0, 0, 36) -- Kích thước slider thu gọn
+    SliderFrame.Size = UDim2.new(1, 0, 0, 30) -- Slider thu nhỏ
     SliderFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
     SliderFrame.BorderSizePixel = 0
     SliderFrame.Parent = TabContainer
     Instance.new("UICorner", SliderFrame).CornerRadius = UDim.new(0, 4)
     
     local Label = Instance.new("TextLabel")
-    Label.Size = UDim2.new(0.6, 0, 0, 16)
-    Label.Position = UDim2.new(0, 8, 0, 2)
+    Label.Size = UDim2.new(0.6, 0, 0, 14)
+    Label.Position = UDim2.new(0, 6, 0, 2)
     Label.BackgroundTransparency = 1
     Label.Text = Text
     Label.TextColor3 = Color3.fromRGB(220, 220, 225)
     Label.TextXAlignment = Enum.TextXAlignment.Left
     Label.Font = Enum.Font.Gotham
-    Label.TextSize = 12
+    Label.TextSize = 10
     Label.Parent = SliderFrame
 
     local ValTxt = Instance.new("TextLabel", SliderFrame)
-    ValTxt.Size = UDim2.new(0.4, -8, 0, 16)
+    ValTxt.Size = UDim2.new(0.4, -6, 0, 14)
     ValTxt.Position = UDim2.new(0.6, 0, 0, 2)
     ValTxt.BackgroundTransparency = 1
     ValTxt.Text = tostring(Config[ConfigKey])
     ValTxt.TextColor3 = Color3.fromRGB(0, 170, 255)
     ValTxt.TextXAlignment = Enum.TextXAlignment.Right
     ValTxt.Font = Enum.Font.GothamBold
-    ValTxt.TextSize = 11
+    ValTxt.TextSize = 9
     
     local SliderBG = Instance.new("TextButton")
-    SliderBG.Size = UDim2.new(1, -16, 0, 6)
-    SliderBG.Position = UDim2.new(0, 8, 0, 22)
+    SliderBG.Size = UDim2.new(1, -12, 0, 4)
+    SliderBG.Position = UDim2.new(0, 6, 0, 20)
     SliderBG.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
     SliderBG.Text = ""
     SliderBG.AutoButtonColor = false
@@ -729,9 +740,11 @@ end
 
 local function UpdateToggleVisual(key)
     local TargetData = GlobalSyncToggles[key]
-    if TargetData and TargetData.Btn and Config[key] ~= nil then
-        TargetData.Btn.BackgroundColor3 = Config[key] and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(60, 60, 65)
-        TargetData.Btn.Text = Config[key] and "ON" or "OFF"
+    if TargetData and TargetData.BG and Config[key] ~= nil then
+        local targetColor = Config[key] and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(60, 60, 65)
+        local targetPos = Config[key] and UDim2.new(1, -12, 0.5, -5) or UDim2.new(0, 2, 0.5, -5)
+        TargetData.BG.BackgroundColor3 = targetColor
+        if TargetData.Knob then TargetData.Knob.Position = targetPos end
     end
 end
 
@@ -747,64 +760,64 @@ table.insert(UI_Refresh_Functions, function()
 end)
 
 -- ==============================================================================
--- POPULATING THE DEFAULT MENU (GROUPED)
+-- POPULATING THE TINY MENU
 -- ==============================================================================
-CreateCategory("--- Aimbot Settings ---")
+CreateCategory("- AIMBOT -")
 CreateToggle("Enable Aimbot", "Aimbot")
-CreateToggle("Aimbot Team Check", "TeamCheck")
-CreateToggle("Aimbot Wall Check", "WallCheck")
-CreateSlider("Aimbot Smoothness", "Smoothness", 0, 10, false)
-
-CreateCategory("--- Kill Aura & Combat ---")
+CreateToggle("Team Check", "TeamCheck")
+CreateToggle("Wall Check", "WallCheck")
+CreateSlider("Smoothness", "Smoothness", 0, 10, false)
+CreateCategory("- KILLAURA -")
 CreateToggle("Enable Kill Aura", "Aura")
 CreateToggle("Aura Team Check", "TeamCheckAura")
 CreateToggle("Aura Wall Check", "AuraWallCheck")
-CreateToggle("Priority Lowest Health", "PriorityLowestHealth")
+CreateToggle("Lowest Health", "PriorityLowestHealth")
 CreateSlider("Aura Radius", "AuraRadius", 5, 150, false)
 CreateSlider("Aura Smoothness", "AuraSmoothness", 0, 10, false)
 CreateToggle("Enable Triggerbot", "Triggerbot")
 CreateToggle("Trigger Wall Check", "TriggerWallCheck")
 CreateToggle("Enable Spinbot", "Spinbot")
 CreateSlider("Spinbot Speed", "SpinSpeed", 5, 100, false)
-CreateCategory("--- Movement & Player ---")
-CreateToggle("Enable Speed Hack", "SpeedToggle")
-CreateSlider("Walk Speed Value", "WalkSpeed", 16, 200, false)
-CreateToggle("Enable Jump Boost", "JumpToggle")
+
+CreateCategory("- PLAYER -")
+CreateToggle("Speed Hack", "SpeedToggle")
+CreateSlider("Walk Speed", "WalkSpeed", 16, 200, false)
+CreateToggle("Jump Boost", "JumpToggle")
 CreateSlider("Jump Power", "JumpPower", 50, 350, false)
-CreateToggle("Enable Flight Mode", "FlyToggle")
+CreateToggle("Flight Mode", "FlyToggle")
 CreateSlider("Flight Speed", "FlySpeed", 10, 300, false)
-CreateToggle("Auto Farm (Behind)", "AutoFarmPlayer")
+CreateToggle("Auto Farm", "AutoFarmPlayer")
 CreateSlider("Farm Delay", "AutoFarmDelay", 0.01, 5, true)
 CreateToggle("Bow Down", "BowDown")
 CreateSlider("Bow Angle", "BowAngle", 0, 90, false)
 
-CreateCategory("--- Visuals & ESP ---")
-CreateToggle("Master ESP Toggle", "EspMaster")
-CreateToggle("Show ESP Box", "EspBox")
-CreateToggle("Show ESP Tracer", "EspTracer")
-CreateToggle("Show Name Tags", "EspName")
-CreateToggle("Show Health Bar", "EspHealth")
+CreateCategory("- VISUALS -")
+CreateToggle("Master ESP", "EspMaster")
+CreateToggle("ESP Box", "EspBox")
+CreateToggle("ESP Tracer", "EspTracer")
+CreateToggle("Name Tags", "EspName")
+CreateToggle("Health Bar", "EspHealth")
 CreateSlider("ESP Transparency", "EspTransparency", 0, 100, false)
 CreateSlider("Max Distance", "MaxDistance", 100, 5000, false)
 CreateToggle("FullBright", "FullBright", function(state)
     if state then Lighting.Ambient = Color3.fromRGB(255, 255, 255) Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
     else Lighting.Ambient = Config.StoredAmbient Lighting.OutdoorAmbient = Config.StoredOutdoorAmbient end
 end)
-CreateToggle("Show FOV Circle", "FovCircle")
+CreateToggle("FOV Circle", "FovCircle")
 CreateSlider("FOV Radius", "FovRadius", 30, 500, false)
-CreateToggle("Show Crosshair Dot", "CrosshairDot")
+CreateToggle("Crosshair Dot", "CrosshairDot")
 
-CreateCategory("--- Mobile & Misc ---")
-CreateToggle("Lock Mobile Buttons", "LockMobileButtons")
-CreateToggle("Show Mobile Aimbot", "ShowMobileAim")
-CreateToggle("Show Mobile Trigger", "ShowMobileTrig")
-CreateToggle("Show Mobile Speed", "ShowMobileSpeed")
-CreateToggle("Show Mobile Farm", "ShowMobileFarm")
-CreateToggle("Show Mobile Aura", "ShowMobileAura")
-CreateToggle("Show Mobile Fly", "ShowMobileFly")
-CreateToggle("Show Mobile 3rd P", "ShowMobileTP")
-CreateToggle("Force Third Person", "ThirdPerson")
-CreateSlider("Third Person Dist", "ThirdPersonDist", 5, 100, false)
+CreateCategory("- SETTINGS -")
+CreateToggle("Lock Mobile Btn", "LockMobileButtons")
+CreateToggle("Show PE Aimbot", "ShowMobileAim")
+CreateToggle("Show PE Trigger", "ShowMobileTrig")
+CreateToggle("Show PE Speed", "ShowMobileSpeed")
+CreateToggle("Show PE Farm", "ShowMobileFarm")
+CreateToggle("Show PE Aura", "ShowMobileAura")
+CreateToggle("Show PE Fly", "ShowMobileFly")
+CreateToggle("Show PE 3rd", "ShowMobileTP")
+CreateToggle("Force 3rd Person", "ThirdPerson")
+CreateSlider("3rd Person Dist", "ThirdPersonDist", 5, 100, false)
 CreateToggle("Anti-AFK", "AntiAFK")
 
 UserInputService.InputBegan:Connect(function(input, processed)
@@ -986,11 +999,11 @@ end)
 
 pcall(function()
     StarterGui:SetCore("SendNotification", {
-        Title = "WANGCAOS CLIENT V7.8",
-        Text = "Standard UI Compact + English Categories loaded successfully!",
+        Title = "WANGCAOS CLIENT V7.9",
+        Text = "Tiny UI + Slider Toggles loaded!",
         Duration = 7
     })
 end)
 -- ==============================================================================
--- END OF SCRIPT - DESIGNED FOR WANG (2026)
+-- END OF SCRIPT - WANG TINY EDITION
 -- ==============================================================================
